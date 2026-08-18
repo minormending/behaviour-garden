@@ -41,6 +41,18 @@ which day it was.
 The grid icon in the corner still opens the dated list, which is the more useful view for
 a grown-up checking back over a fortnight.
 
+## Flowers (grown-ups panel)
+
+A collection view of all eleven species. Each one is drawn at the best stage it has ever
+reached — bloomed, reached a bud, reached leaves — with a count of how many times it has
+flowered. Species that have never appeared are silhouetted and labelled `???`, so the shape
+still hints at what is missing without giving away the colour.
+
+The same sheet is the **seed picker**. While today's plant is still a seed — before the
+first watering — tapping any species replants today as that flower. Once the child has put
+a watering into it the seed is settled and the grid goes inert, with a note saying so. The
+guard is re-checked when you tap, not only when the grid is drawn.
+
 ## Two art styles
 
 **Illustrated** (the default) draws every plant from parts in `plants.js` — eleven species

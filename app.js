@@ -478,6 +478,92 @@ function showPlotLabel(k) {
   labelTimer = setTimeout(() => { el.hidden = true; }, 2600);
 }
 
+/* ─────────────── the species collection ─────────────── */
+
+/** How far each species has ever got, across the whole garden. */
+function speciesStats() {
+  const stats = {};
+  SPECIES.forEach(s => { stats[s.id] = { days: 0, blooms: 0, best: -1 }; });
+  Object.values(S.days).forEach(d => {
+    const st = stats[d.species];
+    if (!st) return;
+    const g = stageOf(d.growth);
+    st.days++;
+    if (g > st.best) st.best = g;
+    if (g === 4) st.blooms++;
+  });
+  return stats;
+}
+
+const REACHED = ['Planted', 'Reached a sprout', 'Reached leaves', 'Reached a bud'];
+
+function renderFlowers() {
+  const stats = speciesStats();
+  const grid = $('#flowerGrid');
+  const cur = S.days[ymd()];   // not today(): never create a day just by looking
+  // The seed can only be swapped before the first watering — after that the
+  // child has put something into this plant and it is not ours to change.
+  const canPick = !!cur && stageOf(cur.growth) === 0;
+
+  const grown = SPECIES.filter(s => stats[s.id].days > 0).length;
+  const bloomed = SPECIES.filter(s => stats[s.id].blooms > 0).length;
+  $('#flowersSummary').textContent =
+    `${grown} of ${SPECIES.length} species grown · ${bloomed} brought to full bloom`;
+
+  const note = $('#seedNote');
+  note.className = 'seed-note ' + (canPick ? 'can' : 'cant');
+  note.textContent = canPick
+    ? "Today is still a seed — tap any flower to plant it instead."
+    : cur
+      ? "Today's plant is already growing, so its seed is settled. You can choose again tomorrow morning."
+      : 'No plant for today yet.';
+
+  grid.className = 'flgrid' + (canPick ? ' pickable' : '');
+  grid.innerHTML = '';
+
+  SPECIES.forEach(sp => {
+    const st = stats[sp.id];
+    const seen = st.days > 0;
+    const cell = document.createElement(canPick ? 'button' : 'div');
+    if (canPick) cell.type = 'button';
+    cell.className = 'fl'
+      + (seen ? '' : ' locked')
+      + (st.blooms ? ' bloomed' : '')
+      + (cur && cur.species === sp.id ? ' istoday' : '');
+
+    const art = document.createElement('div');
+    art.className = 'flart';
+    // Show each species at the best stage it has ever reached; unseen ones are
+    // silhouetted at full bloom so the shape still hints at what is missing.
+    // Follows the active art style so this matches what the child is looking at.
+    paintPlant(art, { species: sp.id, growth: (seen ? Math.max(0, st.best) : 4) * 25 });
+    cell.appendChild(art);
+
+    const name = document.createElement('b');
+    name.textContent = seen ? sp.name : '???';
+    cell.appendChild(name);
+
+    const sub = document.createElement('small');
+    sub.textContent = !seen ? 'Not yet grown'
+      : st.blooms ? `Bloomed ${st.blooms}×`
+      : REACHED[Math.max(0, st.best)];
+    cell.appendChild(sub);
+
+    if (canPick) cell.addEventListener('click', () => pickSeed(sp.id));
+    grid.appendChild(cell);
+  });
+}
+
+function pickSeed(id) {
+  const d = today();
+  if (stageOf(d.growth) !== 0) return;   // re-checked at tap time, not just at render
+  d.species = id;
+  save();
+  plantSig = '';
+  renderPlant();
+  renderFlowers();
+}
+
 /* ─────────────── grown-ups ─────────────── */
 
 let gateAnswer = 0, unlocked = false;
@@ -739,6 +825,8 @@ function init() {
     save(); renderPlant();
     flash($('#repairBtn'), 'Perked back up ✓');
   });
+
+  $('#flowersBtn').addEventListener('click', () => { renderFlowers(); show('#flowersSheet'); });
 
   $$('#styleRow button').forEach(b => b.addEventListener('click', () => {
     S.style = b.dataset.style;

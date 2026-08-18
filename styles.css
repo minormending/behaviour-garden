@@ -365,3 +365,28 @@ body{
 
 .scene-empty{position:absolute; inset:0; display:grid; place-items:center; z-index:4;
   color:#fff; font-weight:800; font-size:16px; text-shadow:0 2px 8px rgba(20,60,30,.5)}
+
+/* ───────────────── species collection / seed picker ───────────────── */
+/* Opened from inside the grown-ups panel, so it has to stack above it. */
+#flowersSheet{z-index:22}
+.seed-note{margin:10px 0 4px; padding:11px 13px; border-radius:14px; font-size:13px;
+  font-weight:700; line-height:1.45}
+.seed-note.can{background:#e9f6ec; border:2px solid #cfe9d6; color:#2f7040}
+.seed-note.cant{background:#f4f7f4; border:2px solid var(--line); color:var(--muted)}
+
+.flgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(94px,1fr)); gap:12px; padding:12px 0 4px}
+.fl{border:2px solid var(--line); background:#fbfdfb; border-radius:18px; padding:8px 6px 10px;
+  font:inherit; text-align:center; cursor:default; display:flex; flex-direction:column; align-items:center}
+.fl .flart{width:100%; aspect-ratio:1; display:grid; place-items:end center}
+.fl .flart > *{width:100%; height:100%}
+.fl b{display:block; margin-top:5px; font-size:12.5px; color:var(--ink); line-height:1.2}
+.fl small{display:block; margin-top:2px; font-size:10.5px; font-weight:700; color:var(--muted); line-height:1.25}
+
+.fl.locked{background:#f5f8f6}
+.fl.locked .flart{filter:brightness(0) saturate(0); opacity:.15}
+.fl.locked b{color:var(--muted)}
+.fl.bloomed{border-color:#cfe9d6; background:#f4fbf6}
+.fl.istoday{border-color:var(--good); box-shadow:0 0 0 3px rgba(63,166,90,.18)}
+
+.flgrid.pickable .fl{cursor:pointer}
+.flgrid.pickable .fl:active{scale:.94}

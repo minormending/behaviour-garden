@@ -115,6 +115,16 @@
   <p id="bedHint" class="scene-hint">Tap a flower to see its day</p>
 </div>
 
+<!-- the species collection, doubling as the seed picker -->
+<div class="sheet" id="flowersSheet" hidden>
+  <div class="sheet-card tall">
+    <div class="sheet-head"><h2>Flowers</h2><button class="x" data-close>✕</button></div>
+    <p id="flowersSummary" class="muted small"></p>
+    <p id="seedNote" class="seed-note"></p>
+    <div id="flowerGrid" class="flgrid"></div>
+  </div>
+</div>
+
 <!-- the dated list, for grown-ups checking back -->
 <div class="sheet" id="listSheet" hidden>
   <div class="sheet-card tall">
@@ -167,6 +177,13 @@
         <p class="muted small">Two or three, named the way you'd say them out loud. Keep them positive.</p>
         <div id="targetEdit" class="stack"></div>
         <button id="addTarget" class="btn ghost small">+ Add another</button>
+      </section>
+
+      <section class="card">
+        <h3>Flowers</h3>
+        <p class="muted small">Which species have appeared so far, and how far each one got.
+          While today is still a seed you can also choose what it will grow into.</p>
+        <button id="flowersBtn" class="btn ghost wide">See all flowers</button>
       </section>
 
       <section class="card">
