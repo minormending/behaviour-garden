@@ -156,6 +156,24 @@ body{
 #stickerLayer{position:absolute; inset:-18%; pointer-events:none}
 .sticker{position:absolute; width:26%; aspect-ratio:1; pointer-events:auto; cursor:pointer;
          animation:drop .45s cubic-bezier(.2,1.6,.4,1)}
+
+/* Only the bee and butterfly wander. Kept slow and shallow on purpose: a small
+   child still has to be able to land a finger on one to take it off. `flit`
+   animates translate/rotate while `drop` animates scale/rotate — separate
+   properties, so the two never fight, and the delay clears the drop first. */
+.sticker.flier{
+  animation:drop .45s cubic-bezier(.2,1.6,.4,1),
+            flit var(--dur,24s) ease-in-out var(--del,.8s) infinite;
+}
+@keyframes flit{
+  0%   {translate:0 0;        rotate:0deg}
+  18%  {translate:26% -16%;   rotate:7deg}
+  36%  {translate:38% 8%;     rotate:-5deg}
+  54%  {translate:14% 24%;    rotate:6deg}
+  72%  {translate:-18% 12%;   rotate:-7deg}
+  86%  {translate:-12% -10%;  rotate:4deg}
+  100% {translate:0 0;        rotate:0deg}
+}
 .sticker:active{scale:.86}
 @keyframes drop{from{scale:0; rotate:-25deg} to{scale:1; rotate:0deg}}
 
@@ -248,7 +266,9 @@ body{
 .tgt button{border:none; background:#fdecea; color:var(--danger); border-radius:13px; width:44px; cursor:pointer; font-size:16px}
 
 @media (prefers-reduced-motion:reduce){
-  *{animation-duration:.001s !important; transition-duration:.001s !important}
+  /* Never just shorten these: an infinite loop at .001s strobes rather than
+     settling. Stop them outright and make transitions instant. */
+  *{animation:none !important; transition-duration:.001s !important}
 }
 
 /* ───────────────── backup & restore ───────────────── */

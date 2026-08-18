@@ -137,6 +137,18 @@ async function mountLottie(el, url, opts = {}) {
 const PLANT_HOLD   = { '1f331': 0.55 };
 const STICKER_PEAK = { '1f98b': 0.5, '1f31f': 0.5, '1f308': 0.5 };
 
+/* The bee and the butterfly are the only stickers that are alive, so they are
+   the only ones that fly. Stars, hearts and rainbows stay put — they are
+   decoration, and a drifting star just looks like a bug.
+
+   Their wings can only run over the stretch of timeline where the creature is
+   actually in frame and centred. Measured coverage: the bee leaves frame
+   entirely from 10% to 70% and is steady from 80% on; the butterfly never
+   leaves but shrinks at both ends. Loop those windows, not the whole clip. */
+const FLY_SEGMENT = { '1f41d': [0.80, 1.0], '1f98b': [0.10, 0.75] };
+
+const stillness = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 async function mountPlant(host, cp, speed = 0.7) {
   const hold = PLANT_HOLD[cp];
   const a = await mountLottie(host, PLANT + cp + '.json',
@@ -155,6 +167,12 @@ async function mountPlantStill(host, cp) {
 }
 
 async function mountSticker(host, cp) {
+  const seg = FLY_SEGMENT[cp];
+  if (seg && !stillness()) {
+    const a = await mountLottie(host, FX + cp + '.json', { loop: true, autoplay: false });
+    if (a) a.playSegments([Math.floor(a.totalFrames * seg[0]), Math.floor(a.totalFrames * seg[1])], true);
+    return a;
+  }
   const a = await mountLottie(host, FX + cp + '.json', { loop: false, autoplay: false });
   if (a) a.goToAndStop(Math.floor(a.totalFrames * (STICKER_PEAK[cp] ?? 0)), true);
   return a;
@@ -252,9 +270,15 @@ function renderStickers() {
   layer.innerHTML = '';
   d.stickers.forEach((s, i) => {
     const el = document.createElement('div');
-    el.className = 'sticker';
+    el.className = 'sticker' + (FLY_SEGMENT[s.cp] ? ' flier' : '');
     el.style.left = s.x + '%';
     el.style.top  = s.y + '%';
+    if (FLY_SEGMENT[s.cp]) {
+      // Derived from the stored position rather than random, so a sticker keeps
+      // the same wandering rhythm across re-renders instead of restarting.
+      el.style.setProperty('--dur', (21 + (s.x % 13)) + 's');
+      el.style.setProperty('--del', (0.6 + (s.y % 6) * 0.8).toFixed(1) + 's');
+    }
     layer.appendChild(el);
     mountSticker(el, s.cp);
     el.addEventListener('click', () => { d.stickers.splice(i, 1); save(); renderStickers(); });
