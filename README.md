@@ -1,5 +1,7 @@
 # Behaviour Garden
 
+### [▶ Open the live demo](https://minormending.github.io/behaviour-garden/)
+
 A static web app for a young child. Each day plants a seed. Watering it — earned by
 being kind, and performed by the child — grows it through sprout, leaves and bud to a
 flower. Every day's plant is kept, so the garden fills up over weeks.
@@ -17,10 +19,18 @@ Then open <http://localhost:8765>.
 
 ## Publishing to GitHub Pages
 
-Push this folder to a repository and turn on Pages (Settings → Pages → deploy from
-branch, root). The `.nojekyll` file stops Jekyll interfering with the `assets/` folder.
-On a tablet, use the browser's "Add to Home Screen" — `manifest.json` makes it open
-full-screen like an app.
+This repository is deployed from `main` at the repository root:
+
+**<https://minormending.github.io/behaviour-garden/>**
+
+To do the same elsewhere, push the folder and turn on Pages (Settings → Pages → deploy
+from branch, root). The `.nojekyll` file stops Jekyll interfering with the `assets/`
+folder. On a tablet, use the browser's "Add to Home Screen" — `manifest.json` makes it
+open full-screen like an app, which also protects the saved garden (see
+[Backups](#backups-and-why-they-matter)).
+
+Pages serves with a ten-minute cache, so after a deploy a hard refresh may be needed
+before a change shows up.
 
 ## How it works
 
@@ -53,6 +63,31 @@ Two deliberate lines: the saddest face is **thirsty, never distressed**, and it 
 comes with a water droplet, so it reads as "I need a drink" rather than as an accusation.
 The brows are the whole difference — sloping their inner ends down instead of up turns the
 same face from sad into cross.
+
+## Stickers
+
+Once something has grown, the child can decorate it from a tray of seven stickers — tap
+one to add it, tap it on the plant to take it off. They are saved with the day.
+
+The **bee and the butterfly are alive, so they behave differently from the rest**: their
+wings beat, and they wander slowly around the plant on a shallow looping path. Stars,
+hearts, rainbows and sparkles stay exactly where they are put — they are decoration, not
+creatures, and a star that drifts just reads as a bug.
+
+Their wings can only run over the stretch of each animation where the creature is actually
+in frame. Measured coverage: the bee leaves frame entirely from 10% to 70% of its timeline
+and is steady from 80% on, and the butterfly never leaves but shrinks at both ends. The app
+loops those windows — 80–100% and 10–75% — rather than the whole clip, which is why neither
+blinks out of existence mid-flight.
+
+The wander is deliberately slow and shallow, and each sticker's period and delay are
+derived from its stored position so no two drift in lockstep and none of them restarts on
+a re-render. Both stay over the plant at the widest point of the path, because a
+five-year-old still has to be able to land a finger on one to take it off.
+
+Under `prefers-reduced-motion` every looping animation stops outright and the two fliers
+stay parked on a still frame. Shortening them instead — which is what the stylesheet used
+to do — makes an infinite loop strobe rather than settle.
 
 ## The garden view
 
