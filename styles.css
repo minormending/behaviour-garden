@@ -142,7 +142,7 @@ body{
    droop and desaturation do not drag it around or drain its colour. Animates
    `scale` and `opacity` only — never `transform` — so nothing can clash. */
 #faceBubble{
-  position:absolute; top:11%; left:calc(50% + min(21vw, 90px)); z-index:4;
+  position:absolute; top:11%; left:calc(50% + min(17vw, 72px)); z-index:4;
   width:clamp(52px, 15vw, 70px); aspect-ratio:1; pointer-events:none;
   background:#fff; border-radius:50% 50% 50% 10px;
   box-shadow:0 4px 14px rgba(20,60,30,.26);
