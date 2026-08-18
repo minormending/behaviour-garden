@@ -1,0 +1,563 @@
+'use strict';
+
+/* ============================================================
+   Behaviour Garden
+
+   Design rules baked into this file, on purpose:
+     • Growth is additive only. Nothing a child earns is ever taken away.
+     • A rough moment makes today's plant THIRSTY, never dying, and one
+       watering always brings it back.
+     • Yesterday's garden is permanent and untouchable.
+     • The grown-up observes; the child performs the watering.
+   ============================================================ */
+
+const KEY   = 'behaviour-garden/v1';
+const PLANT = 'assets/plants/';
+const FX    = 'assets/effects/';
+
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ─────────────── species ─────────────── */
+
+const SPECIES = [
+  { cp:'1f339', name:'Rose',        bud:'#e0566b' },
+  { cp:'1f337', name:'Tulip',       bud:'#e8683f' },
+  { cp:'1f338', name:'Blossom',     bud:'#f2a0bd' },
+  { cp:'1f33c', name:'Daisy',       bud:'#f6c944' },
+  { cp:'1f490', name:'Posy',        bud:'#ef7d9d' },
+  { cp:'1f340', name:'Lucky Clover',bud:'#5fbf5f' },
+  { cp:'1f335', name:'Cactus',      bud:'#4fa35a' },
+  { cp:'1f332', name:'Little Pine', bud:'#3f8a55' },
+];
+const speciesOf = cp => SPECIES.find(s => s.cp === cp) || SPECIES[0];
+
+const STAGE_NAMES = ['A seed', 'A little sprout', 'Growing leaves', 'A bud!'];
+const STICKERS = ['1f41d','1f98b','2b50','1f31f','1f496','1f308','2728'];
+
+/* hand-drawn stages — Noto has no seed or closed bud */
+const SEED_SVG = `<svg viewBox="0 0 200 200"><g transform="translate(100,168)">
+  <path d="M0-26c15 0 25 12 25 24S15 22 0 22-25 10-25 -2 -15-26 0-26Z" fill="#8b5a2b"/>
+  <path d="M-9-15c6-4 15-3 19 3" stroke="#c69157" stroke-width="6" stroke-linecap="round" fill="none"/>
+</g></svg>`;
+
+const budSVG = tint => `<svg viewBox="0 0 200 200">
+  <path d="M100 178V96" stroke="#4a9a52" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M100 144c-27-2-42-17-44-36 27-2 42 13 44 36Z" fill="#5cb85f"/>
+  <path d="M100 128c27-2 42-17 44-36-27-2-42 13-44 36Z" fill="#6cc76f"/>
+  <path d="M100 36c23 17 32 38 23 57-9 16-37 16-46 0-9-19 0-40 23-57Z" fill="${tint}"/>
+  <path d="M100 46c9 16 12 34 8 50" stroke="rgba(255,255,255,.38)" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <ellipse cx="100" cy="96" rx="22" ry="9" fill="#4a9a52"/>
+</svg>`;
+
+/* ─────────────── state ─────────────── */
+
+const DEFAULTS = {
+  v: 1,
+  targets: ['Gentle hands', 'Come the first time I call', 'Shoes on before the timer'],
+  days: {},
+  log: [],
+};
+
+const ymd = (d = new Date()) =>
+  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const shiftDay = (k, n) => { const d = new Date(k + 'T12:00:00'); d.setDate(d.getDate() + n); return ymd(d); };
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return Object.assign(structuredClone(DEFAULTS), JSON.parse(raw));
+  } catch (e) { console.warn('could not read save', e); }
+  return structuredClone(DEFAULTS);
+}
+let S = load();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { console.warn('could not save', e); } };
+
+const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+
+function pickSpecies(key) {
+  let i = hash(key) % SPECIES.length;
+  const prev = S.days[shiftDay(key, -1)];
+  if (prev && prev.species === SPECIES[i].cp) i = (i + 1) % SPECIES.length;
+  return SPECIES[i].cp;
+}
+
+/** Today's plot — created on first open of the day. */
+function today() {
+  const k = ymd();
+  if (!S.days[k]) {
+    // A brilliant afternoon shouldn't be wasted just because the plant was already
+    // in full bloom — up to two unused waterings come with you into the new day.
+    const prev = S.days[shiftDay(k, -1)];
+    const carried = prev ? Math.min(2, prev.water || 0) : 0;
+    if (prev) prev.water = 0;
+    S.days[k] = { species: pickSpecies(k), growth: 0, thirst: 0, water: carried, stickers: [] };
+    save();
+  }
+  return S.days[k];
+}
+
+const stageOf = g => Math.min(4, Math.floor(g / 25));
+
+function streak() {
+  let n = 0, k = ymd();
+  if (!S.days[k] || stageOf(S.days[k].growth) < 4) k = shiftDay(k, -1);
+  while (S.days[k] && stageOf(S.days[k].growth) === 4) { n++; k = shiftDay(k, -1); }
+  return n;
+}
+
+/* ─────────────── lottie plumbing ─────────────── */
+
+const jsonCache = new Map();
+function getJSON(url) {
+  if (!jsonCache.has(url)) {
+    jsonCache.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(url); return r.json(); }));
+  }
+  return jsonCache.get(url);
+}
+
+async function mountLottie(el, url, opts = {}) {
+  let data;
+  try { data = await getJSON(url); }
+  catch (e) { console.warn('missing animation', url); return null; }
+  const anim = lottie.loadAnimation({
+    container: el,
+    renderer: 'svg',
+    loop: opts.loop !== false,
+    autoplay: opts.autoplay !== false,
+    animationData: structuredClone(data),           // lottie mutates its input
+    rendererSettings: { progressiveLoad: true, preserveAspectRatio: 'xMidYMid meet' },
+  });
+  if (opts.speed) anim.setSpeed(opts.speed);
+  return anim;
+}
+
+/* Noto's animations are not uniform, and two of them will bite you:
+   • 🌱 seedling is a one-shot "birth" clip — it grows in, then fades back to
+     an empty frame. Looping it leaves the plot blank most of the time.
+   • 🐝 bee flies right out of frame mid-loop.
+   So plants hold at the frame where the art is fully drawn, and stickers —
+   which are decoration, not animation — are parked on their best frame. */
+const PLANT_HOLD   = { '1f331': 0.55 };
+const STICKER_PEAK = { '1f98b': 0.5, '1f31f': 0.5, '1f308': 0.5 };
+
+async function mountPlant(host, cp, speed = 0.7) {
+  const hold = PLANT_HOLD[cp];
+  const a = await mountLottie(host, PLANT + cp + '.json',
+    { loop: !hold, autoplay: !hold, speed });
+  // Jump straight to the fully-drawn frame — playing the 9s intro would leave
+  // the plot empty every time the app opens. The intro is a reward, not a load screen.
+  if (a && hold) a.goToAndStop(Math.floor(a.totalFrames * hold), true);
+  return a;
+}
+
+async function mountSticker(host, cp) {
+  const a = await mountLottie(host, FX + cp + '.json', { loop: false, autoplay: false });
+  if (a) a.goToAndStop(Math.floor(a.totalFrames * (STICKER_PEAK[cp] ?? 0)), true);
+  return a;
+}
+
+/** Where the plant sits, in #plotWrap coordinates. */
+function plantCenter() {
+  const p = $('#plantBox').getBoundingClientRect();
+  const w = $('#plotWrap').getBoundingClientRect();
+  return { x: p.left - w.left + p.width / 2, y: p.top - w.top + p.height / 2, w: p.width };
+}
+
+async function fx(cp, x, y, size = 84, speed = 1) {
+  const el = document.createElement('div');
+  el.className = 'fx';
+  el.style.cssText = `left:${x}px; top:${y}px; width:${size}px; height:${size}px`;
+  $('#fxLayer').appendChild(el);
+  const a = await mountLottie(el, FX + cp + '.json', { loop: false, speed });
+  if (!a) { el.remove(); return; }
+  // lottie's 'complete' does not always fire (throttled tabs, backgrounded sheets),
+  // so back it with a hard timer — otherwise effect nodes pile up all session.
+  let dead = false;
+  const kill = () => { if (dead) return; dead = true; try { a.destroy(); } catch (e) {} el.remove(); };
+  a.addEventListener('complete', kill);
+  const ms = (a.totalFrames / (a.frameRate || 30)) * 1000 / (speed || 1);
+  setTimeout(kill, Math.max(2000, ms + 800));
+}
+
+const rand = (a, b) => a + Math.random() * (b - a);
+
+/* ─────────────── rendering ─────────────── */
+
+let plantAnim = null, plantSig = '', plantCp = '';
+
+async function renderPlant() {
+  const d  = today();
+  const st = stageOf(d.growth);
+  const sp = speciesOf(d.species);
+  const sig = st + ':' + d.species;
+
+  if (sig !== plantSig) {
+    plantSig = sig;
+    if (plantAnim) { plantAnim.destroy(); plantAnim = null; }
+    const host = $('#plantAnim');
+    host.innerHTML = '';
+    if (st === 0)      host.innerHTML = SEED_SVG;
+    else if (st === 3) host.innerHTML = budSVG(sp.bud);
+    else {
+      plantCp = st === 1 ? '1f331' : st === 2 ? '1f33f' : d.species;
+      plantAnim = await mountPlant(host, plantCp);
+    }
+  }
+
+  const box = $('#plantBox');
+  box.style.setProperty('--droop', (d.thirst / 3).toFixed(2));
+  box.classList.toggle('thirsty', d.thirst > 0);
+
+  $('#plantName').textContent = st === 4 ? sp.name + '!' : STAGE_NAMES[st];
+  renderChrome();
+  renderStickers();
+}
+
+function renderChrome() {
+  const d = today();
+  const st = stageOf(d.growth);
+
+  $('#waterCount').textContent = d.water;
+  $('#waterCount').hidden      = d.water === 0;
+  $('#waterBtn').disabled      = d.water === 0;
+
+  $('#dateChip').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long' });
+  const n = streak();
+  const chip = $('#streakChip');
+  chip.hidden = n < 2;
+  chip.textContent = '🔥 ' + n + ' days blooming';
+
+  $('#hint').textContent =
+    d.thirst > 0            ? 'Your plant is thirsty. A watering will perk it right back up.' :
+    st === 4 && d.water > 0 ? 'All grown! Spare waterings keep until tomorrow 🌙' :
+    st === 4                ? 'It bloomed! Add some stickers 🌟' :
+    d.water > 0             ? 'Tap Water to help it grow!' :
+                              'Ask a grown-up for a watering 💧';
+}
+
+function renderStickers() {
+  const d = today(), layer = $('#stickerLayer');
+  layer.innerHTML = '';
+  d.stickers.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'sticker';
+    el.style.left = s.x + '%';
+    el.style.top  = s.y + '%';
+    layer.appendChild(el);
+    mountSticker(el, s.cp);
+    el.addEventListener('click', () => { d.stickers.splice(i, 1); save(); renderStickers(); });
+  });
+}
+
+function replayPlant() {
+  if (!plantAnim) return;
+  const hold = PLANT_HOLD[plantCp];
+  if (hold) plantAnim.playSegments([0, Math.floor(plantAnim.totalFrames * hold)], true);
+  else plantAnim.goToAndPlay(0);
+}
+
+function bump() {
+  const b = $('#plantBox');
+  b.classList.remove('pop');
+  void b.offsetWidth;
+  b.classList.add('pop');
+}
+
+/* ─────────────── the child's one action ─────────────── */
+
+async function doWater() {
+  const d = today();
+  if (d.water <= 0) return;
+
+  d.water--;
+  d.thirst = Math.max(0, d.thirst - 1);         // a drink always helps
+  const before = stageOf(d.growth);
+  d.growth = Math.min(100, d.growth + 25);      // and always grows
+  save();
+
+  const c = plantCenter();
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => fx('1f4a7', c.x + rand(-.4, .4) * c.w, c.y - c.w * .25 + rand(0, .45) * c.w, rand(42, 66), 1.3), i * 90);
+  }
+  bump();
+  await renderPlant();
+  replayPlant();
+
+  const after = stageOf(d.growth);
+  if (after > before) {
+    setTimeout(() => {
+      for (let i = 0; i < 3; i++) fx('2728', c.x + rand(-.5, .5) * c.w, c.y + rand(-.45, .25) * c.w, 82);
+    }, 420);
+  }
+  if (after === 4 && before < 4) celebrate(c);
+}
+
+function celebrate(c) {
+  setTimeout(() => fx('1f308', c.x, c.y - c.w * .55, c.w * 1.15, .8), 300);
+  ['2b50','1f31f','1f496','2728','2b50'].forEach((cp, i) =>
+    setTimeout(() => fx(cp, c.x + rand(-.75, .75) * c.w, c.y + rand(-.6, .4) * c.w, rand(56, 92)), 480 + i * 150));
+}
+
+/* ─────────────── stickers ─────────────── */
+
+function buildTray() {
+  const tray = $('#stickerTray');
+  tray.innerHTML = '';
+  STICKERS.forEach(cp => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    tray.appendChild(b);
+    const host = document.createElement('div');
+    host.style.cssText = 'width:100%;height:100%';
+    b.appendChild(host);
+    mountSticker(host, cp);
+    b.addEventListener('click', () => { addSticker(cp); });
+  });
+}
+
+function addSticker(cp) {
+  const d = today();
+  if (d.stickers.length >= 8) return;
+  d.stickers.push({ cp, x: Math.round(rand(4, 72)), y: Math.round(rand(2, 66)) });
+  save();
+  renderStickers();
+}
+
+/* ─────────────── garden history ─────────────── */
+
+const gardenAnims = [];
+
+function renderGarden() {
+  const grid = $('#gardenGrid');
+  grid.innerHTML = '';
+  while (gardenAnims.length) gardenAnims.pop().destroy();
+
+  const keys = Object.keys(S.days).sort();
+  const bloomed = keys.filter(k => stageOf(S.days[k].growth) === 4).length;
+  $('#gardenSummary').textContent =
+    `${keys.length} day${keys.length === 1 ? '' : 's'} planted · ${bloomed} in full bloom`;
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); fillCell(e.target); } });
+  }, { root: grid.closest('.sheet-card'), rootMargin: '160px' });
+
+  keys.reverse().forEach(k => {
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (k === ymd() ? ' today' : '');
+    cell.dataset.k = k;
+    cell.innerHTML = `<div class="pot"><div></div></div><small>${labelDate(k)}</small>`;
+    grid.appendChild(cell);
+    io.observe(cell);
+  });
+
+  if (!keys.length) grid.innerHTML = '<p class="muted small">Your first plant is waiting outside.</p>';
+}
+
+function labelDate(k) {
+  if (k === ymd()) return 'Today';
+  if (k === shiftDay(ymd(), -1)) return 'Yesterday';
+  return new Date(k + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+async function fillCell(cell) {
+  const d = S.days[cell.dataset.k];
+  const st = stageOf(d.growth);
+  const host = cell.querySelector('.pot > div');
+  if (st === 0) { host.innerHTML = SEED_SVG; return; }
+  if (st === 3) { host.innerHTML = budSVG(speciesOf(d.species).bud); return; }
+  const cp = st === 1 ? '1f331' : st === 2 ? '1f33f' : d.species;
+  const a = await mountPlant(host, cp, 0.5);
+  if (!a) return;
+  gardenAnims.push(a);
+  while (gardenAnims.length > 24) gardenAnims.shift().destroy();   // keep it light on tablets
+}
+
+/* ─────────────── grown-ups ─────────────── */
+
+let gateAnswer = 0, unlocked = false;
+
+function newGate() {
+  const a = 6 + Math.floor(Math.random() * 9);    // 6–14
+  const b = 13 + Math.floor(Math.random() * 15);   // 13–27
+  gateAnswer = a * b;
+  $('#gateQ').textContent = `${a} × ${b} = ?`;
+  $('#gateA').value = '';
+  $('#gateErr').hidden = true;
+}
+
+function openParent() {
+  if (unlocked) { $('#gate').hidden = true; $('#panel').hidden = false; renderPanel(); }
+  else { $('#gate').hidden = false; $('#panel').hidden = true; newGate(); }
+  show('#parentSheet');
+}
+
+function renderPanel() {
+  const good = $('#goodList');
+  good.innerHTML = '';
+  [...S.targets, 'Something else kind'].forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'btn tick';
+    b.innerHTML = `<span>${escapeHTML(t)}</span><span class="plus">+1 💧</span>`;
+    b.addEventListener('click', () => {
+      today().water++;                       // resolve the day at tap time, not at render time
+      S.log.push({ t: Date.now(), k: 'good', n: t });
+      save(); renderChrome(); flash(b, 'Watering added ✓');
+    });
+    good.appendChild(b);
+  });
+
+  const miss = $('#missList');
+  miss.innerHTML = '';
+  [...S.targets, 'Something else'].forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'btn nudge';
+    b.textContent = t;
+    b.addEventListener('click', () => {
+      const day = today();
+      day.thirst = Math.min(3, day.thirst + 1);
+      S.log.push({ t: Date.now(), k: 'miss', n: t });
+      save(); renderPlant(); flash(b, 'The plant droops a little');
+    });
+    miss.appendChild(b);
+  });
+
+  renderRatio();
+  renderTargets();
+}
+
+function flash(btn, msg) {
+  const old = btn.innerHTML;
+  btn.innerHTML = `<span>${msg}</span>`;
+  btn.disabled = true;
+  setTimeout(() => { btn.innerHTML = old; btn.disabled = false; }, 900);
+}
+
+function renderRatio() {
+  const since = Date.now() - 7 * 864e5;
+  const g = S.log.filter(e => e.t >= since && e.k === 'good').length;
+  const b = S.log.filter(e => e.t >= since && e.k === 'miss').length;
+  const tot = g + b;
+  $('#ratioGood').style.width = tot ? (g / tot * 100) + '%' : '0%';
+  $('#ratioBad').style.width  = tot ? (b / tot * 100) + '%' : '0%';
+
+  let msg;
+  if (!tot)      msg = 'Nothing logged yet this week.';
+  else if (!b)   msg = `${g} good noticed, no reminders. `;
+  else           msg = `${g} good noticed : ${b} reminders — about ${(g / b).toFixed(1)} to 1. `;
+  if (tot && b)  msg += g / b >= 5 ? 'That is the ratio you want.' : 'Most programmes aim for 5 good to every 1 reminder.';
+  else if (tot)  msg += 'Keep it up.';
+  $('#ratioText').textContent = msg;
+}
+
+function renderTargets() {
+  const box = $('#targetEdit');
+  box.innerHTML = '';
+  S.targets.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'tgt';
+    row.innerHTML = `<input value="${escapeHTML(t)}" maxlength="60"><button type="button" aria-label="Remove">✕</button>`;
+    row.querySelector('input').addEventListener('change', e => {
+      S.targets[i] = e.target.value.trim() || t; save(); renderPanel();
+    });
+    row.querySelector('button').addEventListener('click', () => {
+      if (S.targets.length <= 1) return;
+      S.targets.splice(i, 1); save(); renderPanel();
+    });
+    box.appendChild(row);
+  });
+  $('#addTarget').hidden = S.targets.length >= 5;
+}
+
+const escapeHTML = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+/* ─────────────── sheets ─────────────── */
+
+const show = sel => { $(sel).hidden = false; };
+const hide = sel => { $(sel).hidden = true; };
+
+/* ─────────────── sky ─────────────── */
+
+function skyByHour() {
+  const h = new Date().getHours();
+  const [top, bot] =
+    h < 6  ? ['#2b3563', '#5f6fa4'] :
+    h < 9  ? ['#6a9ad4', '#ffd7ae'] :
+    h < 17 ? ['#7ec8ee', '#d6f0ff'] :
+    h < 20 ? ['#e88b5a', '#ffd9a8'] :
+             ['#2b3563', '#5f6fa4'];
+  document.documentElement.style.setProperty('--sky-top', top);
+  document.documentElement.style.setProperty('--sky-bot', bot);
+}
+
+/* ─────────────── wiring ─────────────── */
+
+function init() {
+  skyByHour();
+  mountLottie($('#sun'), FX + '1f31e.json', { speed: 0.25 });
+  buildTray();
+  renderPlant();
+
+  $('#waterBtn').addEventListener('click', doWater);
+  $('#plantBox').addEventListener('click', () => {
+    bump();
+    replayPlant();
+    const c = plantCenter();
+    fx('2728', c.x + rand(-.3, .3) * c.w, c.y + rand(-.3, .1) * c.w, 70);
+  });
+
+  $('#stickerBtn').addEventListener('click', () => show('#stickerSheet'));
+  $('#gardenBtn').addEventListener('click', () => { renderGarden(); show('#gardenSheet'); });
+  $('#parentBtn').addEventListener('click', openParent);
+
+  $$('[data-close]').forEach(b => b.addEventListener('click', () => hide('#' + b.closest('.sheet').id)));
+  $$('.sheet').forEach(s => s.addEventListener('click', e => { if (e.target === s) hide('#' + s.id); }));
+
+  $('#gateGo').addEventListener('click', () => {
+    if (Number($('#gateA').value) === gateAnswer) {
+      unlocked = true;
+      $('#gate').hidden = true; $('#panel').hidden = false;
+      renderPanel();
+    } else { $('#gateErr').hidden = false; newGate(); }
+  });
+  $('#gateA').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gateGo').click(); });
+
+  $('#repairBtn').addEventListener('click', () => {
+    const d = today();
+    d.thirst = 0;
+    S.log.push({ t: Date.now(), k: 'repair' });
+    save(); renderPlant();
+    flash($('#repairBtn'), 'Perked back up ✓');
+  });
+
+  $('#addTarget').addEventListener('click', () => {
+    S.targets.push('New thing we are working on'); save(); renderTargets();
+  });
+
+  $('#exportBtn').addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText(JSON.stringify(S)); flash(e.target, 'Copied ✓'); }
+    catch { window.prompt('Copy your backup:', JSON.stringify(S)); }
+  });
+
+  $('#resetBtn').addEventListener('click', () => {
+    if (!confirm('Erase the whole garden and start again? This cannot be undone.')) return;
+    if (!confirm('Really sure? Every plant your child has grown will be gone.')) return;
+    localStorage.removeItem(KEY);
+    S = structuredClone(DEFAULTS);
+    plantSig = '';
+    renderPlant();
+    hide('#parentSheet');
+  });
+
+  // a new day while the tab was left open
+  let seen = ymd();
+  setInterval(() => {
+    if (ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); }
+  }, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);

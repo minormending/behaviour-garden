@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#8fd3f4">
+<meta name="description" content="A garden that grows with good days.">
+<title>Behaviour Garden</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ───────────────── scenery (Kenney CC0 silhouettes, tinted via mask) ───────────────── -->
+<div id="scene" aria-hidden="true">
+  <div id="sky"></div>
+  <div id="sun"></div>
+  <div id="meadow"></div>
+  <div id="hedgeFar"></div>
+  <div id="fence"></div>
+  <div id="hedgeNear"></div>
+  <div id="ground"></div>
+  <div id="grassStrip"></div>
+</div>
+
+<!-- ───────────────── top bar ───────────────── -->
+<header id="topbar">
+  <button id="parentBtn" class="chip ghost" aria-label="Grown-ups only">
+    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5m7.4-2.6.1-.9-.1-.9 1.9-1.4a.5.5 0 0 0 .1-.6l-1.8-3.1a.5.5 0 0 0-.6-.2l-2.2.9a7 7 0 0 0-1.5-.9l-.3-2.4a.5.5 0 0 0-.5-.4h-3.6a.5.5 0 0 0-.5.4l-.3 2.4a7 7 0 0 0-1.5.9l-2.2-.9a.5.5 0 0 0-.6.2L3.5 9.1a.5.5 0 0 0 .1.6L5.5 11l-.1.9.1.9-1.9 1.4a.5.5 0 0 0-.1.6l1.8 3.1a.5.5 0 0 0 .6.2l2.2-.9a7 7 0 0 0 1.5.9l.3 2.4a.5.5 0 0 0 .5.4h3.6a.5.5 0 0 0 .5-.4l.3-2.4a7 7 0 0 0 1.5-.9l2.2.9a.5.5 0 0 0 .6-.2l1.8-3.1a.5.5 0 0 0-.1-.6Z"/></svg>
+  </button>
+  <div class="spacer"></div>
+  <div id="streakChip" class="chip" hidden></div>
+  <div id="dateChip" class="chip"></div>
+</header>
+
+<!-- ───────────────── today's plant ───────────────── -->
+<main id="plotWrap">
+  <div id="plot">
+    <div id="plantBox">
+      <div id="plantAnim"></div>
+      <div id="stickerLayer"></div>
+    </div>
+    <div id="mound">
+      <svg viewBox="0 0 300 90" preserveAspectRatio="none">
+        <ellipse cx="150" cy="58" rx="132" ry="30" fill="#7a4f33"/>
+        <ellipse cx="150" cy="52" rx="132" ry="30" fill="#96613d"/>
+        <ellipse cx="150" cy="48" rx="104" ry="21" fill="#a97148"/>
+      </svg>
+    </div>
+    <p id="plantName"></p>
+    <p id="hint"></p>
+  </div>
+  <div id="fxLayer" aria-hidden="true"></div>
+</main>
+
+<!-- ───────────────── kid controls ───────────────── -->
+<footer id="kidbar">
+  <button id="waterBtn" class="bigbtn primary" disabled>
+    <svg class="ic" viewBox="0 0 48 48" width="40" height="40">
+      <path fill="none" stroke="#8fd8f2" stroke-width="4" stroke-linecap="round" d="M19 15a7 7 0 0 1 12 0"/>
+      <path fill="#2f9fd0" d="m36 22 8-6a1.6 1.6 0 0 1 2.6 1.3v13.4A1.6 1.6 0 0 1 44 32l-8-6z"/>
+      <path fill="#5bc0eb" d="M14 17h22a3 3 0 0 1 3 3v14a5 5 0 0 1-5 5H16a5 5 0 0 1-5-5V20a3 3 0 0 1 3-3Z"/>
+      <rect x="9" y="13" width="32" height="6" rx="3" fill="#8fd8f2"/>
+    </svg>
+    <span class="lbl">Water</span>
+    <span id="waterCount" class="badge">0</span>
+  </button>
+
+  <button id="stickerBtn" class="bigbtn">
+    <svg class="ic" viewBox="0 0 48 48" width="34" height="34">
+      <path fill="#ffd24a" d="m24 6 5 11 12 1.6-8.8 8.2 2.3 11.9L24 33l-10.5 5.7 2.3-11.9L7 18.6 19 17Z"/>
+    </svg>
+    <span class="lbl">Stickers</span>
+  </button>
+
+  <button id="gardenBtn" class="bigbtn">
+    <svg class="ic" viewBox="0 0 48 48" width="34" height="34">
+      <g fill="#4ea757"><circle cx="14" cy="14" r="7"/><circle cx="34" cy="14" r="7"/><circle cx="14" cy="34" r="7"/><circle cx="34" cy="34" r="7"/></g>
+    </svg>
+    <span class="lbl">My Garden</span>
+  </button>
+</footer>
+
+<!-- ───────────────── sticker tray ───────────────── -->
+<div class="sheet" id="stickerSheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head"><h2>Decorate your plant</h2><button class="x" data-close>✕</button></div>
+    <div id="stickerTray" class="tray"></div>
+    <p class="muted small">Tap a sticker to add it. Tap one on your plant to take it off.</p>
+  </div>
+</div>
+
+<!-- ───────────────── garden history ───────────────── -->
+<div class="sheet" id="gardenSheet" hidden>
+  <div class="sheet-card tall">
+    <div class="sheet-head"><h2>My Garden</h2><button class="x" data-close>✕</button></div>
+    <p id="gardenSummary" class="muted small"></p>
+    <div id="gardenGrid" class="grid"></div>
+  </div>
+</div>
+
+<!-- ───────────────── grown-ups ───────────────── -->
+<div class="sheet" id="parentSheet" hidden>
+  <div class="sheet-card tall">
+    <div class="sheet-head"><h2>Grown-ups</h2><button class="x" data-close>✕</button></div>
+
+    <div id="gate">
+      <p class="muted">Quick check so little hands don't wander in.</p>
+      <p id="gateQ" class="gate-q"></p>
+      <input id="gateA" type="number" inputmode="numeric" placeholder="answer" autocomplete="off">
+      <button id="gateGo" class="btn wide">Unlock</button>
+      <p id="gateErr" class="err" hidden>Not quite — try again.</p>
+    </div>
+
+    <div id="panel" hidden>
+      <section class="card">
+        <h3>Noticed something good</h3>
+        <p class="muted small">This is the button you want to be reaching for. Each tap gives one watering.</p>
+        <div id="goodList" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <h3>Made it right</h3>
+        <p class="muted small">After a rough moment: they apologised, helped fix it, or tried again calmly.</p>
+        <button id="repairBtn" class="btn good wide">They repaired it — perk the plant back up</button>
+      </section>
+
+      <section class="card quiet">
+        <h3>Needed a reminder</h3>
+        <p class="muted small">The plant droops a little. Nothing is ever lost — one watering brings it back.</p>
+        <div id="missList" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <h3>Your ratio, last 7 days</h3>
+        <div id="ratioBar" class="ratio"><span id="ratioGood"></span><span id="ratioBad"></span></div>
+        <p id="ratioText" class="muted small"></p>
+      </section>
+
+      <section class="card">
+        <h3>What we're working on</h3>
+        <p class="muted small">Two or three, named the way you'd say them out loud. Keep them positive.</p>
+        <div id="targetEdit" class="stack"></div>
+        <button id="addTarget" class="btn ghost small">+ Add another</button>
+      </section>
+
+      <section class="card">
+        <h3>Data</h3>
+        <p class="muted small">Everything lives in this browser only. Nothing is uploaded anywhere.</p>
+        <div class="row">
+          <button id="exportBtn" class="btn ghost small">Copy backup</button>
+          <button id="resetBtn" class="btn danger small">Erase everything</button>
+        </div>
+      </section>
+
+      <p class="muted small credits">
+        Plants &amp; effects: <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noopener">Noto Animated Emoji</a> by Google (CC BY 4.0).
+        Foliage: <a href="https://kenney.nl/assets/foliage-sprites" target="_blank" rel="noopener">Kenney</a> (CC0).
+        Player: <a href="https://github.com/airbnb/lottie-web" target="_blank" rel="noopener">lottie-web</a> (MIT).
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/vendor/lottie.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
