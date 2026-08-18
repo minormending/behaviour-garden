@@ -343,7 +343,7 @@ function renderGarden() {
 
   const keys = Object.keys(S.days).sort();
   const bloomed = keys.filter(k => stageOf(S.days[k].growth) === 4).length;
-  $('#gardenSummary').textContent =
+  $('#listSummary').textContent =
     `${keys.length} day${keys.length === 1 ? '' : 's'} planted · ${bloomed} in full bloom`;
 
   keys.reverse().forEach(k => {
@@ -364,19 +364,118 @@ function labelDate(k) {
   return new Date(k + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function fillCell(cell) {
-  const d = S.days[cell.dataset.k];
+/** Draw one day's plant into `host`, in whichever art style is active. */
+function paintPlant(host, d) {
   const st = stageOf(d.growth);
   const sp = speciesOf(d.species);
-  const host = cell.querySelector('.pot > div');
-
   if (S.style !== 'emoji') { host.innerHTML = buildPlant(sp.id, st); return; }
-
   if (st === 0) { host.innerHTML = SEED_SVG; return; }
   if (st === 3) { host.innerHTML = budSVG(sp.bud); return; }
   // Parked, not playing: a stopped Lottie is static SVG with no ticker behind it,
   // so the garden stays flat-cost however many days it holds.
   mountPlantStill(host, st === 1 ? '1f331' : st === 2 ? '1f33f' : sp.cp);
+}
+
+function fillCell(cell) {
+  paintPlant(cell.querySelector('.pot > div'), S.days[cell.dataset.k]);
+}
+
+/* ─────────────── the garden as one place ─────────────── */
+
+/** Split the days into rows that recede: oldest at the back, today at the front. */
+function bedRows(keys) {
+  const w = $('#bed').clientWidth - 24;
+  const base = Math.min(110, Math.max(56, w / 5.2));
+  const maxPer = Math.max(3, Math.min(12, Math.floor(w / (base * .9))));
+  const n = keys.length;
+  // Balance the rows rather than filling greedily, or a 15th plant ends up
+  // standing on its own in front of a row of fourteen.
+  const rowCount = Math.max(1, Math.ceil(n / maxPer));
+  const per = Math.ceil(n / rowCount);
+  const rows = [];
+  for (let i = 0; i < n; i += per) rows.push(keys.slice(i, i + per));
+  return { rows, base };
+}
+
+
+/** Oldest on the left, today on the right, planted in two bands for depth. */
+function renderMeadow() {
+  const row = $('#bedRows');
+  row.innerHTML = '';
+  $('#plotLabel').hidden = true;
+  $$('.scene-empty').forEach(e => e.remove());
+
+  $('#gardenSheet').classList.toggle('emoji', S.style === 'emoji');
+
+  const keys = Object.keys(S.days).sort();
+  const bloomed = keys.filter(k => stageOf(S.days[k].growth) === 4).length;
+  $('#gardenSummary').textContent = keys.length
+    ? `${keys.length} plant${keys.length === 1 ? '' : 's'} · ${bloomed} in full bloom`
+    : '';
+
+  if (!keys.length) {
+    const p = document.createElement('p');
+    p.className = 'scene-empty';
+    p.textContent = 'Your first plant is waiting outside 🌱';
+    $('#gardenSheet').appendChild(p);
+    $('#bedHint').hidden = true;
+    return;
+  }
+  $('#bedHint').hidden = false;
+
+  const { rows, base } = bedRows(keys);
+  rows.forEach((rowKeys, r) => {
+    // 0 at the back, 1 at the front. A single row still reads as the front row.
+    const depth = rows.length === 1 ? 1 : r / (rows.length - 1);
+    const el = document.createElement('div');
+    el.className = 'brow';
+    el.style.setProperty('--pw', Math.round(base * (0.56 + 0.44 * depth)) + 'px');
+    el.style.filter = depth === 1 ? '' : `saturate(${(0.86 + 0.14 * depth).toFixed(2)}) brightness(${(1.07 - 0.07 * depth).toFixed(2)})`;
+    rowKeys.forEach(k => {
+      const plot = document.createElement('button');
+      plot.type = 'button';
+      plot.className = 'plot' + (k === ymd() ? ' today' : '');
+      plot.dataset.k = k;
+      plot.innerHTML = '<div class="pplant"></div><div class="pmound"></div>';
+      el.appendChild(plot);
+      paintPlant(plot.querySelector('.pplant'), S.days[k]);
+      plot.addEventListener('click', () => showPlotLabel(k));
+    });
+    row.appendChild(el);
+  });
+
+  // Newest is at the bottom, so start there.
+  const m = $('#bed');
+  m.scrollTop = m.scrollHeight;
+  $('#bedHint').classList.remove('gone');
+  placeHorizon(row);
+}
+
+/** Put the hedge line just behind the back row, whatever depth the garden is. */
+function placeHorizon(row) {
+  const sheet = $('#gardenSheet');
+  const h = sheet.clientHeight;
+  if (!h) return;
+  // #bedRows is min-height:100% with the rows pinned to its bottom, so measure
+  // the first actual row rather than the wrapper.
+  const first = row.querySelector('.brow');
+  if (!first) return;
+  const top = first.getBoundingClientRect().top;
+  const pct = (h - top + 22) / h * 100;
+  sheet.style.setProperty('--horizon', Math.min(76, Math.max(28, pct)).toFixed(1) + '%');
+}
+
+let labelTimer = 0;
+function showPlotLabel(k) {
+  const d = S.days[k];
+  const st = stageOf(d.growth);
+  const sp = speciesOf(d.species);
+  const el = $('#plotLabel');
+  el.textContent = `${labelDate(k)} — ${st === 4 ? sp.name : STAGE_NAMES[st]}`;
+  el.hidden = false;
+  $('#bedHint').classList.add('gone');
+  clearTimeout(labelTimer);
+  labelTimer = setTimeout(() => { el.hidden = true; }, 2600);
 }
 
 /* ─────────────── grown-ups ─────────────── */
@@ -609,11 +708,20 @@ function init() {
   });
 
   $('#stickerBtn').addEventListener('click', () => show('#stickerSheet'));
-  $('#gardenBtn').addEventListener('click', () => { renderGarden(); show('#gardenSheet'); });
+  $('#gardenBtn').addEventListener('click', () => {
+    show('#gardenSheet');
+    renderMeadow();
+  });
+  $('#viewToggle').addEventListener('click', () => { renderGarden(); show('#listSheet'); });
+  $('#bed').addEventListener('scroll', () => $('#bedHint').classList.add('gone'), { passive: true });
+  window.addEventListener('resize', () => { if (!$('#gardenSheet').hidden) renderMeadow(); });
   $('#parentBtn').addEventListener('click', openParent);
 
   $$('[data-close]').forEach(b => b.addEventListener('click', () => hide('#' + b.closest('.sheet').id)));
-  $$('.sheet').forEach(s => s.addEventListener('click', e => { if (e.target === s) hide('#' + s.id); }));
+  // Backdrop-to-close, except the garden — it is a full-screen place, not a card,
+  // and a tap on its sky should not dismiss it.
+  $$('.sheet:not(.scene)').forEach(s =>
+    s.addEventListener('click', e => { if (e.target === s) hide('#' + s.id); }));
 
   $('#gateGo').addEventListener('click', () => {
     if (Number($('#gateA').value) === gateAnswer) {

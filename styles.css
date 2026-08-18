@@ -284,3 +284,84 @@ body{
 
 /* the SVG bends its own stem, so the wrapper only needs to drain the colour */
 #plantBox.illustrated.thirsty{transform:none; animation-duration:6s}
+
+/* ═════════════════ the whole garden as one continuous place ═════════════════ */
+.sheet.scene{display:block; background:none; padding:0; --horizon:46%}
+.sheet.scene[hidden]{display:none}
+
+.scene-sky{position:absolute; inset:0; background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-bot) 70%)}
+.scene-sky::before,.scene-sky::after{content:''; position:absolute; border-radius:999px;
+  background:#fff; opacity:.28; filter:blur(1px)}
+.scene-sky::before{left:8%; top:12%; width:min(32%,210px); aspect-ratio:2.6/1;
+  box-shadow:88px 11px 0 -8px #fff, 40px -13px 0 -12px #fff}
+.scene-sky::after{right:9%; top:26%; width:min(24%,150px); aspect-ratio:2.4/1;
+  box-shadow:-60px 9px 0 -7px #fff; opacity:.2}
+
+.scene-hedge{transition:bottom .25s ease; position:absolute; left:0; right:0; bottom:var(--horizon); height:13%;
+  background:linear-gradient(180deg,var(--hedge-near) 0%,#37814a 100%);
+  -webkit-mask:url(assets/kenney/wreath-b.png) repeat-x bottom/auto 100%;
+          mask:url(assets/kenney/wreath-b.png) repeat-x bottom/auto 100%}
+.scene-ground{transition:height .25s ease; position:absolute; left:0; right:0; bottom:0; height:calc(var(--horizon) + 1px);
+  background:linear-gradient(180deg,var(--grass-a) 0%,var(--grass-b) 100%)}
+#bedGrass{position:absolute; left:0; right:0; bottom:0; height:9%; z-index:3; pointer-events:none;
+  background:linear-gradient(180deg,#4fa456 0%,#2f7a3f 100%);
+  -webkit-mask:url(assets/kenney/grass-d.png) repeat-x bottom/auto 100%;
+          mask:url(assets/kenney/grass-d.png) repeat-x bottom/auto 100%}
+
+.scene-top{position:absolute; top:0; left:0; right:0; z-index:5;
+  padding:calc(env(safe-area-inset-top) + 14px) 14px 0;
+  display:grid; grid-template-columns:1fr auto; align-items:start; gap:8px}
+.scene-top h2{grid-column:1; margin:0; font-size:24px; color:#fff;
+  text-shadow:0 2px 10px rgba(20,60,30,.5)}
+.scene-top #gardenSummary{grid-column:1; margin:2px 0 0; font-size:13px; font-weight:700; color:#fff;
+  text-shadow:0 1px 7px rgba(20,60,30,.55); opacity:.95}
+.scene-actions{grid-column:2; grid-row:1 / span 2; display:flex; gap:8px}
+
+/* ── the bed: rows receding into the distance, oldest at the back ──
+   Depth comes from each row having its own --pw, so layout stays honest and
+   nothing needs transform maths. Rows overlap so the front occludes the back. */
+#bed{position:absolute; left:0; right:0; top:24%; bottom:9%; z-index:2;
+  overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+#bed::-webkit-scrollbar{display:none}
+#bedRows{display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  min-height:100%; padding:10px 8px 4px}
+
+.brow{display:flex; justify-content:center; align-items:flex-end;
+  margin-bottom:calc(var(--pw) * -.26)}
+.brow:last-child{margin-bottom:0}
+
+.plot{position:relative; flex:0 0 var(--pw); border:none; background:none; padding:0;
+  cursor:pointer; display:flex; flex-direction:column; justify-content:flex-end;
+  margin-right:calc(var(--pw) * -.12);
+  transform-origin:bottom center; transition:transform .25s cubic-bezier(.2,1.4,.4,1)}
+.plot:last-child{margin-right:0}
+.plot .pplant{width:100%; height:var(--pw)}
+.plot .pplant > *{width:100%; height:100%}
+/* Noto's plants are centred in their own box rather than sitting on a baseline,
+   so a soil mound under them reads as a mistake. The illustrated set is rooted
+   at a known point and keeps its mound. */
+.scene.emoji .plot .pmound{display:none}
+.plot .pmound{height:calc(var(--pw) * .17); margin-top:calc(var(--pw) * -.06);
+  background:radial-gradient(ellipse at 50% 38%, #a97148 0 46%, #7a4f33 48% 62%, transparent 63%)}
+.plot:active{transform:scale(1.09)}
+
+.plot.today .pplant{filter:drop-shadow(0 0 10px rgba(255,228,120,.95))}
+.plot.today::after{content:''; position:absolute; left:50%; bottom:calc(var(--pw) * .02);
+  translate:-50% 0; width:70%; height:calc(var(--pw) * .13); border-radius:50%;
+  box-shadow:0 0 0 2.5px rgba(255,255,255,.85), 0 0 16px 5px rgba(255,230,120,.8)}
+
+.plot-label{position:absolute; left:50%; translate:-50% 0; z-index:6; bottom:calc(9% + 14px);
+  margin:0; padding:9px 16px; border-radius:999px; background:rgba(255,255,255,.96);
+  font-size:14px; font-weight:800; color:var(--ink); white-space:nowrap;
+  box-shadow:0 4px 14px rgba(20,60,30,.3); animation:rise .22s ease}
+.plot-label[hidden]{display:none}
+
+.scene-hint{position:absolute; left:50%; translate:-50% 0; z-index:5;
+  bottom:calc(env(safe-area-inset-bottom) + 14px); margin:0;
+  padding:7px 15px; border-radius:999px; background:rgba(20,55,30,.34);
+  font-size:13px; font-weight:700; color:#fff; white-space:nowrap;
+  transition:opacity .4s}
+.scene-hint.gone{opacity:0}
+
+.scene-empty{position:absolute; inset:0; display:grid; place-items:center; z-index:4;
+  color:#fff; font-weight:800; font-size:16px; text-shadow:0 2px 8px rgba(20,60,30,.5)}

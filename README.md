@@ -29,6 +29,18 @@ full-screen like an app.
 | The garden | The child. Water, tap the plant, add stickers, browse past days. |
 | ⚙ Grown-ups | The parent, behind a multiplication question a five-year-old won't pass. |
 
+## The garden view
+
+Tapping **My Garden** opens the whole garden as one place, not a list: every day's plant
+laid out in rows that recede into the distance, oldest at the back, today glowing at the
+front. Rows are balanced rather than filled greedily, each row gets its own plant size so
+depth comes from honest layout instead of transform maths, and the hedge line is placed
+just behind the back row whatever depth the garden has grown to. Tap any flower to see
+which day it was.
+
+The grid icon in the corner still opens the dated list, which is the more useful view for
+a grown-up checking back over a fortnight.
+
 ## Two art styles
 
 **Illustrated** (the default) draws every plant from parts in `plants.js` — eleven species

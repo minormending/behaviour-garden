@@ -92,11 +92,34 @@
   </div>
 </div>
 
-<!-- ───────────────── garden history ───────────────── -->
-<div class="sheet" id="gardenSheet" hidden>
+<!-- ───────────────── the whole garden, as one place ───────────────── -->
+<div class="sheet scene" id="gardenSheet" hidden>
+  <div class="scene-sky"></div>
+  <div class="scene-hedge"></div>
+  <div class="scene-ground"></div>
+
+  <header class="scene-top">
+    <h2>My Garden</h2>
+    <p id="gardenSummary"></p>
+    <div class="scene-actions">
+      <button id="viewToggle" class="chip ghost" aria-label="Show the list">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 5h6v6H4zm10 0h6v6h-6zM4 13h6v6H4zm10 0h6v6h-6z"/></svg>
+      </button>
+      <button class="chip ghost" data-close aria-label="Close">✕</button>
+    </div>
+  </header>
+
+  <div id="bed"><div id="bedRows"></div></div>
+  <div id="bedGrass"></div>
+  <p id="plotLabel" class="plot-label" hidden></p>
+  <p id="bedHint" class="scene-hint">Tap a flower to see its day</p>
+</div>
+
+<!-- the dated list, for grown-ups checking back -->
+<div class="sheet" id="listSheet" hidden>
   <div class="sheet-card tall">
-    <div class="sheet-head"><h2>My Garden</h2><button class="x" data-close>✕</button></div>
-    <p id="gardenSummary" class="muted small"></p>
+    <div class="sheet-head"><h2>Every day</h2><button class="x" data-close>✕</button></div>
+    <p id="listSummary" class="muted small"></p>
     <div id="gardenGrid" class="grid"></div>
   </div>
 </div>
