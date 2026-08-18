@@ -43,10 +43,11 @@ a grown-up checking back over a fortnight.
 
 ## Flowers (grown-ups panel)
 
-A collection view of all eleven species. Each one is drawn at the best stage it has ever
-reached — bloomed, reached a bud, reached leaves — with a count of how many times it has
-flowered. Species that have never appeared are silhouetted and labelled `???`, so the shape
-still hints at what is missing without giving away the colour.
+A collection view of all eleven species, each named whether or not it has been grown — a
+silhouette is enough of a "not yet", and a parent choosing a seed needs to know what they
+are picking. Grown species show the date they were last planted and the best stage they
+have ever reached, with a count of how many times they have flowered. Ones that have never
+appeared are silhouetted and marked "Not yet grown".
 
 The same sheet is the **seed picker**. While today's plant is still a seed — before the
 first watering — tapping any species replants today as that flower. Once the child has put

@@ -483,19 +483,20 @@ function showPlotLabel(k) {
 /** How far each species has ever got, across the whole garden. */
 function speciesStats() {
   const stats = {};
-  SPECIES.forEach(s => { stats[s.id] = { days: 0, blooms: 0, best: -1 }; });
-  Object.values(S.days).forEach(d => {
+  SPECIES.forEach(s => { stats[s.id] = { days: 0, blooms: 0, best: -1, last: null }; });
+  Object.entries(S.days).forEach(([k, d]) => {
     const st = stats[d.species];
     if (!st) return;
     const g = stageOf(d.growth);
     st.days++;
     if (g > st.best) st.best = g;
     if (g === 4) st.blooms++;
+    if (!st.last || k > st.last) st.last = k;
   });
   return stats;
 }
 
-const REACHED = ['Planted', 'Reached a sprout', 'Reached leaves', 'Reached a bud'];
+const REACHED = ['Still a seed', 'Reached a sprout', 'Reached leaves', 'Reached a bud'];
 
 function renderFlowers() {
   const stats = speciesStats();
@@ -539,15 +540,32 @@ function renderFlowers() {
     paintPlant(art, { species: sp.id, growth: (seen ? Math.max(0, st.best) : 4) * 25 });
     cell.appendChild(art);
 
+    // The name shows whether or not it has been grown — a silhouette is enough
+    // of a "not yet", and a parent choosing a seed needs to know what it is.
     const name = document.createElement('b');
-    name.textContent = seen ? sp.name : '???';
+    name.textContent = sp.name;
     cell.appendChild(name);
 
-    const sub = document.createElement('small');
-    sub.textContent = !seen ? 'Not yet grown'
-      : st.blooms ? `Bloomed ${st.blooms}×`
-      : REACHED[Math.max(0, st.best)];
-    cell.appendChild(sub);
+    const when = document.createElement('small');
+    if (seen) {
+      // "Today"/"Yesterday" read better lowercase mid-sentence; a month must not.
+      const rel = labelDate(st.last);
+      when.append('Last planted ');
+      const d8 = document.createElement('span');
+      d8.className = 'nb';   // never break "Aug 16" across two lines
+      d8.textContent = /^(Today|Yesterday)$/.test(rel) ? rel.toLowerCase() : rel;
+      when.appendChild(d8);
+    } else {
+      when.textContent = 'Not yet grown';
+    }
+    cell.appendChild(when);
+
+    if (seen) {
+      const how = document.createElement('small');
+      how.className = 'flprog';
+      how.textContent = st.blooms ? `Bloomed ${st.blooms}×` : REACHED[Math.max(0, st.best)];
+      cell.appendChild(how);
+    }
 
     if (canPick) cell.addEventListener('click', () => pickSeed(sp.id));
     grid.appendChild(cell);
