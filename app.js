@@ -216,6 +216,7 @@ async function renderPlant() {
 
   const box = $('#plantBox');
   box.classList.toggle('illustrated', illustrated);
+  $('#faceBubble').style.top = FACE_TOP[st];
   box.style.setProperty('--droop', (d.thirst / 3).toFixed(2));
   box.classList.toggle('thirsty', d.thirst > 0);
 
@@ -268,6 +269,67 @@ function replayPlant() {
   else plantAnim.goToAndPlay(0);
 }
 
+/* ─────────────── the mood bubble ───────────────
+   It surfaces for a few seconds and goes again, rather than sitting there —
+   a constant face would stop being information and become wallpaper. */
+
+const FACE_HOLD = 2900;   // how long it lingers
+const FACE_GAP  = 5200;   // and how long until it comes back
+
+/* A seed sits at the bottom of the plot and a bloom fills it, so the bubble
+   has to follow the plant up as it grows or it ends up talking to thin air. */
+const FACE_TOP = ['58%', '43%', '29%', '15%', '11%'];
+
+let faceShowTimer = 0, faceHideTimer = 0;
+
+/** Read the plant's feelings off today's record. */
+function moodNow() {
+  const d = today();
+  const st = stageOf(d.growth);
+  if (d.thirst >= 3) return 'thirsty';
+  if (d.thirst === 2) return 'sad';
+  if (d.thirst === 1) return 'meh';
+  if (d.water > 0 && st < 4) return 'hopeful';   // asks for the drink it is owed
+  if (st === 4) return 'beam';
+  return 'happy';
+}
+
+function paintFace(mood) {
+  const b = $('#faceBubble');
+  b.innerHTML = buildFace(mood);
+  b.classList.add('show');
+}
+
+function hideFace() {
+  $('#faceBubble').classList.remove('show');
+}
+
+/** The idle rhythm: appear, linger, dissipate, wait, repeat. */
+function faceBeat() {
+  paintFace(moodNow());
+  faceHideTimer = setTimeout(() => {
+    hideFace();
+    faceShowTimer = setTimeout(faceBeat, FACE_GAP);
+  }, FACE_HOLD);
+}
+
+function startFaceLoop(delay = 900) {
+  clearTimeout(faceShowTimer);
+  clearTimeout(faceHideTimer);
+  faceShowTimer = setTimeout(faceBeat, delay);
+}
+
+/** Something just happened — react at once, then fall back into the rhythm. */
+function flashFace(mood, hold = 3400) {
+  clearTimeout(faceShowTimer);
+  clearTimeout(faceHideTimer);
+  paintFace(mood || moodNow());
+  faceHideTimer = setTimeout(() => {
+    hideFace();
+    faceShowTimer = setTimeout(faceBeat, FACE_GAP);
+  }, hold);
+}
+
 function bump() {
   const b = $('#plantBox');
   b.classList.remove('pop');
@@ -302,6 +364,7 @@ async function doWater() {
     }, 420);
   }
   if (after === 4 && before < 4) celebrate(c);
+  flashFace(after > before ? 'yay' : moodNow());
 }
 
 function celebrate(c) {
@@ -611,7 +674,7 @@ function renderPanel() {
     b.addEventListener('click', () => {
       today().water++;                       // resolve the day at tap time, not at render time
       S.log.push({ t: Date.now(), k: 'good', n: t });
-      save(); renderChrome(); flash(b, 'Watering added ✓');
+      save(); renderChrome(); flashFace('hopeful'); flash(b, 'Watering added ✓');
     });
     good.appendChild(b);
   });
@@ -626,7 +689,8 @@ function renderPanel() {
       const day = today();
       day.thirst = Math.min(3, day.thirst + 1);
       S.log.push({ t: Date.now(), k: 'miss', n: t });
-      save(); renderPlant(); flash(b, 'The plant droops a little');
+      save(); renderPlant(); flashFace(null, 4200);
+      flash(b, 'The plant droops a little');
     });
     miss.appendChild(b);
   });
@@ -802,11 +866,13 @@ function init() {
   mountLottie($('#sun'), FX + '1f31e.json', { speed: 0.25 });
   buildTray();
   renderPlant();
+  startFaceLoop();
 
   $('#waterBtn').addEventListener('click', doWater);
   $('#plantBox').addEventListener('click', () => {
     bump();
     replayPlant();
+    flashFace();
     const c = plantCenter();
     fx('2728', c.x + rand(-.3, .3) * c.w, c.y + rand(-.3, .1) * c.w, 70);
   });
@@ -841,6 +907,7 @@ function init() {
     d.thirst = 0;
     S.log.push({ t: Date.now(), k: 'repair' });
     save(); renderPlant();
+    flashFace('yay');
     flash($('#repairBtn'), 'Perked back up ✓');
   });
 
@@ -926,10 +993,10 @@ function init() {
   // a new day while the tab was left open
   let seen = ymd();
   setInterval(() => {
-    if (ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); }
+    if (ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); startFaceLoop(); }
   }, 60000);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); }
+    if (!document.hidden && ymd() !== seen) { seen = ymd(); plantSig = ''; skyByHour(); renderPlant(); startFaceLoop(); }
   });
 }
 

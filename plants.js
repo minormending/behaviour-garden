@@ -321,3 +321,52 @@ function buildPlant(id, stage, popped = false) {
 }
 
 const STAGE_LABEL = ['A seed', 'A little sprout', 'Growing leaves', 'A bud!'];
+
+/* ─────────────── how the plant is feeling ───────────────
+   The droop alone is too quiet to read at a glance, especially at one
+   reminder. A face states it outright. The saddest face is thirsty, never
+   distressed, and it comes with a droplet so it reads as "I need a drink"
+   rather than as an accusation. */
+
+const FACE_INK = '#3b4a3d';
+
+function buildFace(mood) {
+  const dot = (x, y, r = 6.5) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${FACE_INK}"/>`;
+  const archEye = (x, y) =>
+    `<path d="M${x - 10} ${y + 4} Q${x} ${y - 9} ${x + 10} ${y + 4}" fill="none"`
+    + ` stroke="${FACE_INK}" stroke-width="6" stroke-linecap="round"/>`;
+  const smile = (w, d) =>
+    `<path d="M${50 - w} 60 Q50 ${60 + d} ${50 + w} 60" fill="none"`
+    + ` stroke="${FACE_INK}" stroke-width="6" stroke-linecap="round"/>`;
+  const grin = () => `<path d="M27 55 Q50 86 73 55 Q50 66 27 55Z" fill="${FACE_INK}"/>`;
+  const frown = (w, d) =>
+    `<path d="M${50 - w} 68 Q50 ${68 - d} ${50 + w} 68" fill="none"`
+    + ` stroke="${FACE_INK}" stroke-width="6" stroke-linecap="round"/>`;
+  const flat = () => `<path d="M37 65 H63" fill="none" stroke="${FACE_INK}" stroke-width="6" stroke-linecap="round"/>`;
+  const cheeks = () =>
+    `<circle cx="20" cy="57" r="7.5" fill="#f7a2a2" opacity=".8"/>`
+    + `<circle cx="80" cy="57" r="7.5" fill="#f7a2a2" opacity=".8"/>`;
+  /* Inner ends RAISED. Sloping them down instead is the single line that turns
+     this face from "I need a drink" into "I am cross with you". */
+  const brows = () =>
+    `<path d="M23 35 Q32 29 41 27" fill="none" stroke="${FACE_INK}" stroke-width="5" stroke-linecap="round" opacity=".85"/>`
+    + `<path d="M77 35 Q68 29 59 27" fill="none" stroke="${FACE_INK}" stroke-width="5" stroke-linecap="round" opacity=".85"/>`;
+  const drop = () =>
+    `<path d="M84 12 c6 9 9 13 9 17.5 a9 9 0 0 1-18 0 C75 25 78 21 84 12Z" fill="#5bc0eb"/>`
+    + `<path d="M80 27 a4 4 0 0 0 4 4" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>`;
+  const sparks = () =>
+    `<path d="M12 22 l3 -7 3 7 7 3 -7 3 -3 7 -3 -7 -7 -3Z" fill="#ffd24a"/>`
+    + `<path d="M86 66 l2.4 -5.5 2.4 5.5 5.5 2.4 -5.5 2.4 -2.4 5.5 -2.4 -5.5 -5.5 -2.4Z" fill="#ffd24a"/>`;
+
+  let f;
+  switch (mood) {
+    case 'yay':     f = archEye(34, 44) + archEye(66, 44) + grin() + cheeks() + sparks(); break;
+    case 'beam':    f = archEye(34, 44) + archEye(66, 44) + grin() + cheeks(); break;
+    case 'hopeful': f = dot(34, 42) + dot(66, 42) + smile(16, 14) + drop(); break;
+    case 'meh':     f = dot(34, 44) + dot(66, 44) + flat(); break;
+    case 'sad':     f = brows() + dot(34, 49) + dot(66, 49) + frown(15, 10); break;
+    case 'thirsty': f = brows() + dot(34, 49) + dot(66, 49) + frown(17, 12) + drop(); break;
+    default:        f = dot(34, 43) + dot(66, 43) + smile(17, 15); break;   // 'happy'
+  }
+  return `<svg class="facesvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${f}</svg>`;
+}

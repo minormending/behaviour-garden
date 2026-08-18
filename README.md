@@ -29,6 +29,31 @@ full-screen like an app.
 | The garden | The child. Water, tap the plant, add stickers, browse past days. |
 | ⚙ Grown-ups | The parent, behind a multiplication question a five-year-old won't pass. |
 
+## How the plant is feeling
+
+The droop on its own is too quiet to read at a glance, especially after a single
+reminder. So a small speech bubble surfaces beside the plant for about three seconds
+every nine or so, showing a face, then dissipates — a permanent face would stop being
+information and become wallpaper.
+
+| Face | When |
+|---|---|
+| beaming, sparkles | just watered, or just grew |
+| beaming | in full bloom and content |
+| smiling | growing along fine |
+| smiling with a droplet | a watering is owed — tap Water |
+| blank | one reminder |
+| sad | two reminders |
+| sad with a droplet | three reminders, the thirstiest it gets |
+
+It also reacts immediately to anything that happens — a watering, a reminder, a repair,
+or just being tapped — and then falls back into the idle rhythm.
+
+Two deliberate lines: the saddest face is **thirsty, never distressed**, and it always
+comes with a water droplet, so it reads as "I need a drink" rather than as an accusation.
+The brows are the whole difference — sloping their inner ends down instead of up turns the
+same face from sad into cross.
+
 ## The garden view
 
 Tapping **My Garden** opens the whole garden as one place, not a list: every day's plant
