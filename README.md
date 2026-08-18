@@ -57,6 +57,27 @@ minutes of shared attention at the end of the day, not the app — treat it as a
 to sit down together. Second, novelty carries systems like this for a few weeks, then
 fades; plan to retire it gracefully rather than watch it die.
 
+## Backups, and why they matter
+
+iOS Safari clears script-writable storage — `localStorage` included — after **seven days
+without a first-party visit**. A garden left alone over a fortnight's holiday would simply
+be gone. Two defences, both in place:
+
+1. **Add it to the Home Screen and open it from there.** Home-screen web apps keep their own
+   use counter and are exempt from the seven-day sweep. This is what `manifest.json` is for,
+   and it is the single most important thing to do on an iPad or iPhone.
+2. **Take a backup.** The grown-ups panel offers *Save backup file* (a dated `.json`) and
+   *Copy backup*. Past ten days of garden with no backup in a fortnight, the panel nudges you.
+
+The app also calls `navigator.storage.persist()` on load — honoured by Chrome and Firefox,
+best-effort in Safari. The panel tells you which way it went.
+
+**Restoring merges rather than replaces.** A day already on this device is only overwritten
+if the backup grew it further, so a restore can never lose progress, and re-running the same
+backup twice is a no-op. Your own targets survive a restore; the backup's are adopted only if
+yours are still the untouched defaults. That also makes this the cheap answer to the
+two-parent problem — pass a backup between devices to combine two gardens.
+
 ## Assets
 
 Plants and effects are [Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/)

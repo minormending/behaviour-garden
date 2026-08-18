@@ -234,3 +234,15 @@ body{
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001s !important; transition-duration:.001s !important}
 }
+
+/* ───────────────── backup & restore ───────────────── */
+#restoreBox{margin-top:12px}
+#restoreBox[hidden]{display:none}
+#restoreText{width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+  padding:10px 12px; border:2px solid var(--line); border-radius:13px; resize:vertical}
+.nudge-banner{background:#fdf5e8; border:2px solid #f0e0c2; color:#8a6a2f;
+  border-radius:14px; padding:11px 13px; margin:10px 0 0; font-size:13px; font-weight:700; line-height:1.45}
+.nudge-banner[hidden]{display:none}
+#restoreMsg[hidden]{display:none}
+#restoreMsg.ok{color:var(--good); font-weight:700}
+#restoreMsg.bad{color:var(--danger); font-weight:700}

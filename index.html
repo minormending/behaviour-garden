@@ -149,9 +149,25 @@
       <section class="card">
         <h3>Data</h3>
         <p class="muted small">Everything lives in this browser only. Nothing is uploaded anywhere.</p>
+        <p id="storageNote" class="muted small"></p>
+        <p id="backupNudge" class="nudge-banner" hidden></p>
         <div class="row">
+          <button id="saveBtn" class="btn ghost small">Save backup file</button>
           <button id="exportBtn" class="btn ghost small">Copy backup</button>
+          <button id="restoreBtn" class="btn ghost small">Restore…</button>
           <button id="resetBtn" class="btn danger small">Erase everything</button>
+        </div>
+
+        <div id="restoreBox" hidden>
+          <p class="muted small">Paste a backup below. Restoring <strong>merges</strong> it in — a day
+            that is already here is kept unless the backup grew it further, so nothing is ever lost.
+            You can also use this to pull another parent's garden onto this device.</p>
+          <textarea id="restoreText" rows="4" placeholder="Paste backup here" spellcheck="false"></textarea>
+          <div class="row">
+            <button id="restoreGo" class="btn good small">Merge it in</button>
+            <button id="restoreCancel" class="btn ghost small">Cancel</button>
+          </div>
+          <p id="restoreMsg" class="small" hidden></p>
         </div>
       </section>
 

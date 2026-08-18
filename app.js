@@ -57,6 +57,7 @@ const DEFAULTS = {
   targets: ['Gentle hands', 'Come the first time I call', 'Shoes on before the timer'],
   days: {},
   log: [],
+  lastBackup: 0,
 };
 
 const ymd = (d = new Date()) =>
@@ -424,6 +425,7 @@ function renderPanel() {
 
   renderRatio();
   renderTargets();
+  renderData();
 }
 
 function flash(btn, msg) {
@@ -472,6 +474,93 @@ function renderTargets() {
 const escapeHTML = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
+/* ─────────────── keeping the garden alive ───────────────
+   iOS Safari clears script-writable storage — localStorage included — after
+   seven days without a first-party visit. A home-screen web app gets its own
+   use counter and is exempt, which is why manifest.json exists. Belt and
+   braces: ask for persistent storage, and make backups actually restorable. */
+
+let persisted = null;
+
+async function initStorage() {
+  try {
+    if (navigator.storage && navigator.storage.persisted) persisted = await navigator.storage.persisted();
+    if (!persisted && navigator.storage && navigator.storage.persist) persisted = await navigator.storage.persist();
+  } catch (e) { persisted = null; }
+  if (!$('#parentSheet').hidden) renderData();
+}
+
+const markBackedUp = () => { S.lastBackup = Date.now(); save(); renderData(); };
+
+function backupOverdue() {
+  return Object.keys(S.days).length >= 10 && Date.now() - (S.lastBackup || 0) > 14 * 864e5;
+}
+
+const num = (v, max) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.min(max, Math.round(n))) : 0;
+};
+
+/** Union the two gardens. A day already here only loses to a backup that grew further. */
+function mergeState(inc) {
+  if (!inc || typeof inc !== 'object' || !inc.days || typeof inc.days !== 'object') {
+    throw new Error("That doesn't look like a Behaviour Garden backup.");
+  }
+  let added = 0, improved = 0, logs = 0;
+
+  for (const [k, v] of Object.entries(inc.days)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || !v || typeof v !== 'object') continue;
+    const day = {
+      species: SPECIES.some(s => s.cp === v.species) ? v.species : SPECIES[0].cp,
+      growth:  num(v.growth, 100),
+      thirst:  num(v.thirst, 3),
+      water:   num(v.water, 9),
+      stickers: (Array.isArray(v.stickers) ? v.stickers : [])
+        .filter(s => s && STICKERS.includes(s.cp))
+        .slice(0, 8)
+        .map(s => ({ cp: s.cp, x: num(s.x, 100), y: num(s.y, 100) })),
+    };
+    const cur = S.days[k];
+    if (!cur) { S.days[k] = day; added++; }
+    else if (day.growth > cur.growth) { S.days[k] = day; improved++; }
+  }
+
+  const seen = new Set(S.log.map(e => e.t + '|' + e.k + '|' + (e.n || '')));
+  (Array.isArray(inc.log) ? inc.log : []).forEach(e => {
+    if (!e || typeof e.t !== 'number' || !e.k) return;
+    const id = e.t + '|' + e.k + '|' + (e.n || '');
+    if (seen.has(id)) return;
+    seen.add(id);
+    S.log.push({ t: e.t, k: e.k, n: typeof e.n === 'string' ? e.n.slice(0, 60) : undefined });
+    logs++;
+  });
+  S.log.sort((a, b) => a.t - b.t);
+
+  // Only adopt the backup's targets if these are still the untouched defaults.
+  if (JSON.stringify(S.targets) === JSON.stringify(DEFAULTS.targets)
+      && Array.isArray(inc.targets) && inc.targets.length) {
+    S.targets = inc.targets.slice(0, 5).map(t => String(t).slice(0, 60));
+  }
+  if (typeof inc.lastBackup === 'number') S.lastBackup = Math.max(S.lastBackup || 0, inc.lastBackup);
+
+  save();
+  return { added, improved, logs };
+}
+
+function renderData() {
+  $('#storageNote').textContent = persisted
+    ? 'This device has marked the garden as persistent storage ✓ — still worth keeping a backup.'
+    : 'This browser has not guaranteed the garden\u2019s storage. On iPhone and iPad, add this to the '
+      + 'Home Screen and open it from there — Safari clears data for sites left unvisited for a week.';
+
+  const nudge = $('#backupNudge');
+  nudge.hidden = !backupOverdue();
+  if (!nudge.hidden) {
+    nudge.textContent = Object.keys(S.days).length
+      + ' days of garden here and no backup in the last fortnight. Saving one takes a second.';
+  }
+}
+
 /* ─────────────── sheets ─────────────── */
 
 const show = sel => { $(sel).hidden = false; };
@@ -495,6 +584,7 @@ function skyByHour() {
 
 function init() {
   skyByHour();
+  initStorage();
   mountLottie($('#sun'), FX + '1f31e.json', { speed: 0.25 });
   buildTray();
   renderPlant();
@@ -536,8 +626,58 @@ function init() {
   });
 
   $('#exportBtn').addEventListener('click', async e => {
-    try { await navigator.clipboard.writeText(JSON.stringify(S)); flash(e.target, 'Copied ✓'); }
-    catch { window.prompt('Copy your backup:', JSON.stringify(S)); }
+    const btn = e.target.closest('button');
+    const text = JSON.stringify(S);
+    // The clipboard rejects on an unfocused document and on insecure origins, and the
+    // prompt() fallback can be suppressed entirely — neither may abort the bookkeeping.
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (err) { /* fall through */ }
+    if (!ok) { try { ok = window.prompt('Copy your backup:', text) !== null; } catch (err) {} }
+    flash(btn, ok ? 'Copied ✓' : 'Use “Save backup file”');
+    if (ok) markBackedUp();
+  });
+
+  $('#saveBtn').addEventListener('click', e => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'behaviour-garden-' + ymd() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    flash(e.target.closest('button'), 'Saved ✓');
+    markBackedUp();
+  });
+
+  $('#restoreBtn').addEventListener('click', () => {
+    const box = $('#restoreBox');
+    box.hidden = !box.hidden;
+    $('#restoreMsg').hidden = true;
+    if (!box.hidden) $('#restoreText').focus();
+  });
+  $('#restoreCancel').addEventListener('click', () => {
+    $('#restoreBox').hidden = true;
+    $('#restoreText').value = '';
+  });
+
+  $('#restoreGo').addEventListener('click', () => {
+    const msg = $('#restoreMsg');
+    msg.hidden = false;
+    try {
+      const r = mergeState(JSON.parse($('#restoreText').value.trim()));
+      msg.className = 'small ok';
+      msg.textContent = r.added + ' day' + (r.added === 1 ? '' : 's') + ' added, '
+        + r.improved + ' grown further, ' + r.logs + ' log entries merged.';
+      $('#restoreText').value = '';
+      plantSig = '';
+      renderPlant();
+      renderPanel();
+      msg.hidden = false;
+    } catch (err) {
+      msg.className = 'small bad';
+      msg.textContent = err instanceof SyntaxError ? "That isn't valid backup text." : err.message;
+    }
   });
 
   $('#resetBtn').addEventListener('click', () => {
