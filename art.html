@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Behaviour Garden — art sheet</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{overflow:auto; height:auto; display:block; background:#eef4ef; padding:18px}
+  h1{font-size:19px; margin:0 0 4px} h2{font-size:14px; margin:22px 0 8px; color:#6d7f70}
+  table{border-collapse:collapse} td,th{padding:2px}
+  th{font-size:11px; color:#6d7f70; font-weight:700}
+  .cellart{width:104px; height:120px; background:#fff; border:1px solid #dde7df; border-radius:12px;
+        display:grid; place-items:end center; overflow:hidden}
+  .cellart > div{width:96%; height:96%}
+  .name{font-size:11px; font-weight:700; text-align:right; padding-right:8px; white-space:nowrap}
+  .dry{background:#faf7f0; filter:saturate(.4) brightness(.97)}
+</style></head><body>
+<h1>Plant art sheet — 11 species × 5 stages</h1>
+<p class="muted small">Right-hand block is the same plant at full thirst (<code>--droop:1</code>).</p>
+<div id="out"></div>
+<script src="plants.js"></script>
+<script>
+const stages=['seed','sprout','leaves','bud','bloom'];
+let h='<table><tr><th></th>';
+stages.forEach(s=>h+='<th>'+s+'</th>');
+h+='<th style="width:14px"></th>';
+stages.forEach(s=>h+='<th>'+s+' · dry</th>');
+h+='</tr>';
+ART.forEach(sp=>{
+  h+='<tr><td class="name">'+sp.name+'</td>';
+  for(let st=0;st<5;st++) h+='<td><div class="cellart"><div>'+buildPlant(sp.id,st)+'</div></div></td>';
+  h+='<td></td>';
+  for(let st=0;st<5;st++) h+='<td><div class="cellart dry" style="--droop:1"><div>'+buildPlant(sp.id,st)+'</div></div></td>';
+  h+='</tr>';
+});
+h+='</table>';
+document.getElementById('out').innerHTML=h;
+</script></body></html>

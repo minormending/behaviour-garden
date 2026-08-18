@@ -29,6 +29,23 @@ full-screen like an app.
 | The garden | The child. Water, tap the plant, add stickers, browse past days. |
 | ⚙ Grown-ups | The parent, behind a multiplication question a five-year-old won't pass. |
 
+## Two art styles
+
+**Illustrated** (the default) draws every plant from parts in `plants.js` — eleven species
+across five growth stages with a continuous health state, about 2KB of generated SVG each
+and no asset files at all. Because the stem, leaves and flower head are separate layers,
+thirst is expressed four ways at once: the plant leans and settles, the head nods over, the
+leaves fall away and the colour drains. Three species — sunflower, bluebell, poppy — do not
+exist in Noto's animated set at all.
+
+**Emoji** uses the original Noto Animated Emoji. Switch between them in the grown-ups panel;
+the choice is remembered per browser and past days re-render in whichever style is active.
+The switcher exists because the only opinion that matters here is your child's — show them
+both. Note that in emoji mode the three new species fall back to a lookalike (sunflower and
+bluebell borrow the daisy and the posy), so you will see the odd duplicate.
+
+Open `art.html` to see the whole matrix — every species, every stage, healthy and thirsty.
+
 The grown-up notices behaviour; the child does the watering. Four waterings take a
 plant from seed to bloom. Unused waterings carry over — up to two — into the next day.
 
@@ -80,10 +97,12 @@ two-parent problem — pass a backup between devices to combine two gardens.
 
 ## Assets
 
-Plants and effects are [Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/)
-(CC BY 4.0), scenery is [Kenney](https://kenney.nl/assets/foliage-sprites) foliage (CC0)
-used as tintable CSS masks, and playback is [lottie-web](https://github.com/airbnb/lottie-web)
-(MIT). Full attribution and file-by-file detail in [CREDITS.md](CREDITS.md).
+The illustrated plants are original work with no licence attached. The emoji style uses
+[Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/) (CC BY 4.0),
+which also supplies the water, sparkles and stickers in both styles. Scenery is
+[Kenney](https://kenney.nl/assets/foliage-sprites) foliage (CC0) used as tintable CSS masks,
+and playback is [lottie-web](https://github.com/airbnb/lottie-web) (MIT). Full attribution
+and file-by-file detail in [CREDITS.md](CREDITS.md).
 
 Two Noto animations need care and are handled in `app.js`: 🌱 is a one-shot clip that
 fades back to an empty frame, and 🐝 flies out of frame mid-loop. Both are parked on a
@@ -93,18 +112,19 @@ frame where the art is fully drawn.
 
 ```
 index.html      markup
-styles.css      scenery, layout, the thirst treatment
+styles.css      scenery, layout, plant animation, the thirst treatment
 app.js          state, growth, effects, parent panel
-assets/plants/  11 Lottie JSON — growth stages and 8 species
-assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun
+plants.js       the illustrated plant set — 11 species, drawn from parts
+art.html        dev sheet: every species × stage × health state
+assets/plants/  11 Lottie JSON — used only by the emoji style
+assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
 assets/vendor/  lottie-web
 ```
 
-## Ideas for v2
+## Ideas for v3
 
-- Replace the Noto plants with a commissioned or generated style set — 6 species ×
-  4 stages × 2 health states, layered so stem, leaves and bloom animate separately.
 - Let the child choose the day's seed from two or three options.
 - Seasons, so the garden background changes over months.
 - A weekly recap for the parent: which behaviours came up most.
+- More species — adding one is a single entry in the `ART` table in `plants.js`.

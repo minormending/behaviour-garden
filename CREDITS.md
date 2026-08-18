@@ -3,14 +3,19 @@
 Behaviour Garden is built entirely from freely licensed assets. Everything is
 vendored into this repository — the app makes no external network requests.
 
-## Plants, flowers and effects
+## Plants — illustrated style (the default)
+Original work, drawn from parts in `plants.js`. No third-party licence applies.
+Eleven species × five growth stages × a continuous health state, generated as SVG at
+runtime. Three of them (sunflower, bluebell, poppy) have no counterpart in the Noto set.
+
+## Plants and effects — emoji style
 **[Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/)** — Google
 Licensed **CC BY 4.0** ([licence](https://creativecommons.org/licenses/by/4.0/)).
 Lottie JSON files in `assets/plants/` and `assets/effects/`, unmodified.
 
 | File | Emoji | Used for |
 |---|---|---|
-| `plants/1f331.json` | 🌱 seedling | growth stage 1 |
+| `plants/1f331.json` | 🌱 seedling | growth stage 1 (emoji style) |
 | `plants/1f33f.json` | 🌿 herb | growth stage 2 |
 | `plants/1f339.json` | 🌹 rose | species |
 | `plants/1f337.json` | 🌷 tulip | species |
@@ -43,5 +48,5 @@ Original licence text preserved at `assets/kenney/LICENSE-kenney.txt`.
 `assets/vendor/lottie.min.js`, unmodified. Licence at `assets/vendor/LICENSE-lottie-web.txt`.
 
 ## Everything else
-The seed and bud illustrations, the picket fence, the soil mound, the app icon and all
-UI iconography were drawn for this project.
+The illustrated plant set, the seed and bud, the picket fence, the soil mound, the app icon
+and all UI iconography were drawn for this project.

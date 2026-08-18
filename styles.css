@@ -219,6 +219,7 @@ body{
 .btn.good{background:var(--good); color:#fff}
 .btn.ghost{background:#fff; border:2px solid var(--line)}
 .btn.danger{background:#fdecea; color:var(--danger)}
+.btn.on{background:var(--good); color:#fff; border-color:var(--good)}
 .btn.tick{background:#e9f6ec; border:2px solid #cfe9d6; display:flex; justify-content:space-between; align-items:center; gap:10px}
 .btn.tick .plus{background:var(--good); color:#fff; border-radius:999px; padding:3px 11px; font-size:14px; flex:none}
 .btn.nudge{background:#fdf5e8; border:2px solid #f0e0c2; color:#8a6a2f; font-size:14px; padding:11px 14px}
@@ -246,3 +247,40 @@ body{
 #restoreMsg[hidden]{display:none}
 #restoreMsg.ok{color:var(--good); font-weight:700}
 #restoreMsg.bad{color:var(--danger); font-weight:700}
+
+/* ───────────────── hand-authored plant art ───────────────── */
+.plantsvg{width:100%; height:100%; display:block; overflow:visible}
+
+.plantsvg{filter:drop-shadow(0 3px 3px rgba(20,60,30,.22))}
+
+/* Thirst is expressed in four places at once — the whole plant leans and
+   settles, the flower head nods over, and the leaves fall away. */
+.p-droop{transform-box:fill-box; transform-origin:bottom center;
+  transform:rotate(calc(var(--droop,0) * 4deg)) skewX(calc(var(--droop,0) * -5deg))
+            scaleY(calc(1 - .1 * var(--droop,0)));
+  transition:transform .9s cubic-bezier(.2,.8,.3,1)}
+.p-nod{transform-box:fill-box; transform-origin:top center;
+  transform:rotate(calc(var(--droop,0) * 26deg)) translateY(calc(var(--droop,0) * 4px));
+  transition:transform .9s cubic-bezier(.2,.8,.3,1)}
+.p-leafdroop{transform-box:fill-box; transition:transform .9s cubic-bezier(.2,.8,.3,1)}
+.p-leaf-r .p-leafdroop{transform-origin:left center;  transform:rotate(calc(var(--droop,0) * 20deg))}
+.p-leaf-l .p-leafdroop{transform-origin:right center; transform:rotate(calc(var(--droop,0) * -20deg))}
+.p-sway{transform-box:fill-box; transform-origin:bottom center;
+  animation:pSway 6s ease-in-out infinite}
+.p-bloom{transform-box:fill-box; transform-origin:center;
+  animation:pBob 4.6s ease-in-out infinite}
+.p-leaf{transform-box:fill-box; animation:pFlutter 3.8s ease-in-out infinite;
+  animation-delay:calc(var(--i,0) * -.7s)}
+.p-leaf-r{transform-origin:left center}
+.p-leaf-l{transform-origin:right center}
+
+@keyframes pSway   {0%,100%{transform:rotate(-1.6deg)} 50%{transform:rotate(1.6deg)}}
+@keyframes pBob    {0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-4px) rotate(2deg)}}
+@keyframes pFlutter{0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)}}
+
+.plantsvg.popped .p-bloom{
+  animation:pBloomIn .75s cubic-bezier(.2,1.7,.4,1), pBob 4.6s ease-in-out infinite .75s}
+@keyframes pBloomIn{0%{transform:scale(0) rotate(-40deg)} 60%{transform:scale(1.14) rotate(6deg)} 100%{transform:none}}
+
+/* the SVG bends its own stem, so the wrapper only needs to drain the colour */
+#plantBox.illustrated.thirsty{transform:none; animation-duration:6s}

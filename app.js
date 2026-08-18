@@ -20,17 +20,11 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 /* ─────────────── species ─────────────── */
 
-const SPECIES = [
-  { cp:'1f339', name:'Rose',        bud:'#e0566b' },
-  { cp:'1f337', name:'Tulip',       bud:'#e8683f' },
-  { cp:'1f338', name:'Blossom',     bud:'#f2a0bd' },
-  { cp:'1f33c', name:'Daisy',       bud:'#f6c944' },
-  { cp:'1f490', name:'Posy',        bud:'#ef7d9d' },
-  { cp:'1f340', name:'Lucky Clover',bud:'#5fbf5f' },
-  { cp:'1f335', name:'Cactus',      bud:'#4fa35a' },
-  { cp:'1f332', name:'Little Pine', bud:'#3f8a55' },
-];
-const speciesOf = cp => SPECIES.find(s => s.cp === cp) || SPECIES[0];
+/* The species table lives in plants.js so the art and the data agree.
+   `id` is the stable key stored against a day; `cp` is the Noto file used
+   when the emoji style is selected. */
+const SPECIES = ART;
+const speciesOf = id => SPECIES.find(s => s.id === id) || SPECIES[0];
 
 const STAGE_NAMES = ['A seed', 'A little sprout', 'Growing leaves', 'A bud!'];
 const STICKERS = ['1f41d','1f98b','2b50','1f31f','1f496','1f308','2728'];
@@ -58,6 +52,7 @@ const DEFAULTS = {
   days: {},
   log: [],
   lastBackup: 0,
+  style: 'illustrated',
 };
 
 const ymd = (d = new Date()) =>
@@ -79,8 +74,8 @@ const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^
 function pickSpecies(key) {
   let i = hash(key) % SPECIES.length;
   const prev = S.days[shiftDay(key, -1)];
-  if (prev && prev.species === SPECIES[i].cp) i = (i + 1) % SPECIES.length;
-  return SPECIES[i].cp;
+  if (prev && prev.species === SPECIES[i].id) i = (i + 1) % SPECIES.length;
+  return SPECIES[i].id;
 }
 
 /** Today's plot — created on first open of the day. */
@@ -152,6 +147,13 @@ async function mountPlant(host, cp, speed = 0.7) {
   return a;
 }
 
+/** A plant frozen on the frame where its art is fully drawn. */
+async function mountPlantStill(host, cp) {
+  const a = await mountLottie(host, PLANT + cp + '.json', { loop: false, autoplay: false });
+  if (a) a.goToAndStop(Math.floor(a.totalFrames * (PLANT_HOLD[cp] ?? 0)), true);
+  return a;
+}
+
 async function mountSticker(host, cp) {
   const a = await mountLottie(host, FX + cp + '.json', { loop: false, autoplay: false });
   if (a) a.goToAndStop(Math.floor(a.totalFrames * (STICKER_PEAK[cp] ?? 0)), true);
@@ -191,22 +193,29 @@ async function renderPlant() {
   const d  = today();
   const st = stageOf(d.growth);
   const sp = speciesOf(d.species);
-  const sig = st + ':' + d.species;
+  const illustrated = S.style !== 'emoji';
+  const sig = st + ':' + d.species + ':' + (illustrated ? 'art' : 'emoji');
 
   if (sig !== plantSig) {
+    const justBloomed = plantSig !== '' && st === 4;
     plantSig = sig;
     if (plantAnim) { plantAnim.destroy(); plantAnim = null; }
     const host = $('#plantAnim');
     host.innerHTML = '';
-    if (st === 0)      host.innerHTML = SEED_SVG;
-    else if (st === 3) host.innerHTML = budSVG(sp.bud);
-    else {
-      plantCp = st === 1 ? '1f331' : st === 2 ? '1f33f' : d.species;
+    if (illustrated) {
+      host.innerHTML = buildPlant(sp.id, st, justBloomed);
+    } else if (st === 0) {
+      host.innerHTML = SEED_SVG;
+    } else if (st === 3) {
+      host.innerHTML = budSVG(sp.bud);
+    } else {
+      plantCp = st === 1 ? '1f331' : st === 2 ? '1f33f' : sp.cp;
       plantAnim = await mountPlant(host, plantCp);
     }
   }
 
   const box = $('#plantBox');
+  box.classList.toggle('illustrated', illustrated);
   box.style.setProperty('--droop', (d.thirst / 3).toFixed(2));
   box.classList.toggle('thirsty', d.thirst > 0);
 
@@ -252,6 +261,7 @@ function renderStickers() {
 }
 
 function replayPlant() {
+  if (S.style !== 'emoji') return;   // CSS drives the illustrated plants
   if (!plantAnim) return;
   const hold = PLANT_HOLD[plantCp];
   if (hold) plantAnim.playSegments([0, Math.floor(plantAnim.totalFrames * hold)], true);
@@ -327,21 +337,14 @@ function addSticker(cp) {
 
 /* ─────────────── garden history ─────────────── */
 
-const gardenAnims = [];
-
 function renderGarden() {
   const grid = $('#gardenGrid');
   grid.innerHTML = '';
-  while (gardenAnims.length) gardenAnims.pop().destroy();
 
   const keys = Object.keys(S.days).sort();
   const bloomed = keys.filter(k => stageOf(S.days[k].growth) === 4).length;
   $('#gardenSummary').textContent =
     `${keys.length} day${keys.length === 1 ? '' : 's'} planted · ${bloomed} in full bloom`;
-
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); fillCell(e.target); } });
-  }, { root: grid.closest('.sheet-card'), rootMargin: '160px' });
 
   keys.reverse().forEach(k => {
     const cell = document.createElement('div');
@@ -349,7 +352,7 @@ function renderGarden() {
     cell.dataset.k = k;
     cell.innerHTML = `<div class="pot"><div></div></div><small>${labelDate(k)}</small>`;
     grid.appendChild(cell);
-    io.observe(cell);
+    fillCell(cell);
   });
 
   if (!keys.length) grid.innerHTML = '<p class="muted small">Your first plant is waiting outside.</p>';
@@ -361,17 +364,19 @@ function labelDate(k) {
   return new Date(k + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-async function fillCell(cell) {
+function fillCell(cell) {
   const d = S.days[cell.dataset.k];
   const st = stageOf(d.growth);
+  const sp = speciesOf(d.species);
   const host = cell.querySelector('.pot > div');
+
+  if (S.style !== 'emoji') { host.innerHTML = buildPlant(sp.id, st); return; }
+
   if (st === 0) { host.innerHTML = SEED_SVG; return; }
-  if (st === 3) { host.innerHTML = budSVG(speciesOf(d.species).bud); return; }
-  const cp = st === 1 ? '1f331' : st === 2 ? '1f33f' : d.species;
-  const a = await mountPlant(host, cp, 0.5);
-  if (!a) return;
-  gardenAnims.push(a);
-  while (gardenAnims.length > 24) gardenAnims.shift().destroy();   // keep it light on tablets
+  if (st === 3) { host.innerHTML = budSVG(sp.bud); return; }
+  // Parked, not playing: a stopped Lottie is static SVG with no ticker behind it,
+  // so the garden stays flat-cost however many days it holds.
+  mountPlantStill(host, st === 1 ? '1f331' : st === 2 ? '1f33f' : sp.cp);
 }
 
 /* ─────────────── grown-ups ─────────────── */
@@ -425,6 +430,7 @@ function renderPanel() {
 
   renderRatio();
   renderTargets();
+  renderStyle();
   renderData();
 }
 
@@ -511,7 +517,7 @@ function mergeState(inc) {
   for (const [k, v] of Object.entries(inc.days)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || !v || typeof v !== 'object') continue;
     const day = {
-      species: SPECIES.some(s => s.cp === v.species) ? v.species : SPECIES[0].cp,
+      species: SPECIES.some(s => s.id === v.species) ? v.species : SPECIES[0].id,
       growth:  num(v.growth, 100),
       thirst:  num(v.thirst, 3),
       water:   num(v.water, 9),
@@ -545,6 +551,11 @@ function mergeState(inc) {
 
   save();
   return { added, improved, logs };
+}
+
+function renderStyle() {
+  $$('#styleRow button').forEach(b =>
+    b.classList.toggle('on', (S.style || 'illustrated') === b.dataset.style));
 }
 
 function renderData() {
@@ -620,6 +631,14 @@ function init() {
     save(); renderPlant();
     flash($('#repairBtn'), 'Perked back up ✓');
   });
+
+  $$('#styleRow button').forEach(b => b.addEventListener('click', () => {
+    S.style = b.dataset.style;
+    save();
+    renderStyle();
+    plantSig = '';
+    renderPlant();
+  }));
 
   $('#addTarget').addEventListener('click', () => {
     S.targets.push('New thing we are working on'); save(); renderTargets();
