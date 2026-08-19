@@ -863,6 +863,152 @@ function renderData() {
   }
 }
 
+/* ─────────────── sharing the garden by QR ───────────────
+   The other phone's built-in camera does the scanning, so there is no decoder
+   to vendor, no camera permission to ask for, and nothing to install — the QR
+   just holds a link back to this page with the garden packed into the fragment.
+   Fragments are never sent to a server, so the data stays on the two devices.
+
+   Size is the whole design constraint. A QR tops out near 2.9KB and anything
+   past ~1.2KB gets dense enough to fight a phone camera. Measured on a 60-day
+   garden: the full state is 23.8KB of JSON, 2.5KB once gzipped and base64'd —
+   which only encodes at error-correction L, at 165 modules. Dropping the
+   behaviour log takes the same garden to 1.2KB and 133 modules at level M.
+   So the log is left out, which is right anyway: it is a record of the adult's
+   logging habits on this device, not part of the child's garden. */
+
+const QR_EC       = 'M';
+const QR_MAX_CHARS = 1800;   // beyond this, send them to the file backup instead
+
+const b64urlEncode = bytes => {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {          // chunked: spreading a
+    s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); // big array overflows the stack
+  }
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const b64urlDecode = s => {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(bin, ch => ch.charCodeAt(0));
+};
+
+const canZip = () => typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+
+async function gzipText(text) {
+  const cs = new CompressionStream('gzip');
+  const w = cs.writable.getWriter();
+  w.write(new TextEncoder().encode(text));
+  w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+
+async function gunzipText(bytes) {
+  const ds = new DecompressionStream('gzip');
+  const w = ds.writable.getWriter();
+  w.write(bytes);
+  w.close();
+  return new Response(ds.readable).text();
+}
+
+/** The QR encoder is 56KB and only a grown-up ever needs it, so load it on demand. */
+let qrLib = null;
+function loadQrLib() {
+  if (qrLib) return qrLib;
+  qrLib = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'assets/vendor/qrcode.js';
+    s.onload = () => resolve(window.qrcode);
+    s.onerror = () => reject(new Error('could not load the QR encoder'));
+    document.head.appendChild(s);
+  });
+  return qrLib;
+}
+
+/** One <path> for every dark module — crisp at any size, no canvas. */
+function qrSVG(make, text) {
+  const q = make(0, QR_EC);
+  q.addData(text, 'Byte');
+  q.make();
+  const n = q.getModuleCount(), quiet = 2, size = n + quiet * 2;
+  let d = '';
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+  }
+  return { modules: n, svg: `<svg viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"`
+    + ` xmlns="http://www.w3.org/2000/svg"><rect width="${size}" height="${size}" fill="#fff"/>`
+    + `<path d="${d}" fill="#111"/></svg>` };
+}
+
+async function shareLink() {
+  const packed = await gzipText(JSON.stringify({ ...S, log: [] }));
+  const payload = b64urlEncode(packed);
+  const base = location.origin + location.pathname;
+  return { url: base + '#g=' + payload, chars: (base + '#g=').length + payload.length };
+}
+
+let lastShareURL = '';
+
+async function renderQR() {
+  const box = $('#qrBox'), note = $('#qrNote');
+  box.className = 'qrbox';
+  box.innerHTML = '<p class="muted small">Building…</p>';
+  note.textContent = '';
+
+  if (!canZip()) {
+    box.className = 'qrbox tooBig';
+    box.textContent = 'This browser cannot compress the garden, so a QR would not fit. Use “Save backup file”.';
+    return;
+  }
+  try {
+    const { url, chars } = await shareLink();
+    lastShareURL = url;
+    const dayCount = Object.keys(S.days).length;
+
+    if (chars > QR_MAX_CHARS) {
+      box.className = 'qrbox tooBig';
+      box.textContent = `This garden is too big for a QR code (${dayCount} days). `
+        + 'Use “Save backup file” and send the file instead — it has no size limit.';
+      return;
+    }
+    const { modules, svg } = qrSVG(await loadQrLib(), url);
+    box.innerHTML = svg;
+    note.textContent = `${dayCount} day${dayCount === 1 ? '' : 's'} packed into ${chars} characters`
+      + ` · ${modules}×${modules} code. Hold the phone steady and fairly close.`;
+  } catch (e) {
+    box.className = 'qrbox tooBig';
+    box.textContent = 'Could not build the code. Use “Save backup file” instead.';
+    console.warn('QR build failed', e);
+  }
+}
+
+/* ─────────────── receiving a shared garden ─────────────── */
+
+let incoming = null;
+
+async function checkIncomingShare() {
+  const m = /[#&]g=([A-Za-z0-9\-_]+)/.exec(location.hash);
+  if (!m) return;
+  // Drop it from the URL straight away so a refresh cannot re-prompt.
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!canZip()) return;
+  try {
+    const inc = JSON.parse(await gunzipText(b64urlDecode(m[1])));
+    if (!inc || typeof inc.days !== 'object' || !inc.days) throw new Error('not a garden');
+    incoming = inc;
+    const keys = Object.keys(inc.days);
+    const bloomed = keys.filter(k => stageOf(inc.days[k].growth) === 4).length;
+    const fresh = keys.filter(k => !S.days[k]).length;
+    $('#importSummary').textContent =
+      `${keys.length} day${keys.length === 1 ? '' : 's'} · ${bloomed} in full bloom · `
+      + `${fresh} not on this device yet`;
+    $('#importMsg').hidden = true;
+    show('#importSheet');
+  } catch (e) {
+    console.warn('could not read the shared garden', e);
+  }
+}
+
 /* ─────────────── sheets ─────────────── */
 
 const show = sel => { $(sel).hidden = false; };
@@ -891,6 +1037,10 @@ function init() {
   buildTray();
   renderPlant();
   startFaceLoop();
+  checkIncomingShare();
+  // A link that differs only by its fragment does not reload the page, so a
+  // shared garden opened while the app is already running arrives here instead.
+  window.addEventListener('hashchange', checkIncomingShare);
 
   $('#waterBtn').addEventListener('click', doWater);
   $('#plantBox').addEventListener('click', () => {
@@ -972,6 +1122,35 @@ function init() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     flash(e.target.closest('button'), 'Saved ✓');
     markBackedUp();
+  });
+
+  $('#qrBtn').addEventListener('click', () => { show('#qrSheet'); renderQR(); });
+
+  $('#qrCopyBtn').addEventListener('click', async e => {
+    const btn = e.target.closest('button');
+    if (!lastShareURL) { flash(btn, 'Nothing to copy'); return; }
+    let ok = false;
+    try { await navigator.clipboard.writeText(lastShareURL); ok = true; } catch (err) {}
+    if (!ok) { try { ok = window.prompt('Copy this link:', lastShareURL) !== null; } catch (err) {} }
+    flash(btn, ok ? 'Link copied ✓' : 'Could not copy');
+  });
+
+  $('#importCancel').addEventListener('click', () => { incoming = null; hide('#importSheet'); });
+
+  $('#importGo').addEventListener('click', () => {
+    const msg = $('#importMsg');
+    msg.hidden = false;
+    try {
+      const r = mergeState(incoming);
+      msg.className = 'small ok';
+      msg.textContent = `${r.added} day${r.added === 1 ? '' : 's'} added, ${r.improved} grown further.`;
+      incoming = null;
+      plantSig = '';
+      renderPlant();
+    } catch (err) {
+      msg.className = 'small bad';
+      msg.textContent = err.message;
+    }
   });
 
   $('#restoreBtn').addEventListener('click', () => {

@@ -174,11 +174,40 @@ be gone. Two defences, both in place:
 The app also calls `navigator.storage.persist()` on load — honoured by Chrome and Firefox,
 best-effort in Safari. The panel tells you which way it went.
 
+### Sharing by QR
+
+**Share by QR** draws a code holding the whole garden. Point the other phone's ordinary
+camera at it, tap the link, and the app opens offering to merge. Nothing is installed, no
+camera permission is asked for, and no decoder is bundled — the receiving phone's own
+camera does the scanning. The data rides in the URL *fragment*, which browsers never send
+to a server, so it only ever exists on the two devices. It works with no signal.
+
+Size is the whole constraint, and it is why the behaviour log is left out. Measured on a
+60-day garden: the full state is 23.8KB of JSON, still 2.5KB after gzip and base64 — which
+only fits a QR at error-correction L, at 165 modules, and a code that dense loses a fight
+with a phone camera. Without the log the same garden is 1.1KB and 125 modules at level M.
+Leaving it out is right anyway: the log records the adult's logging habits on one device,
+not the child's garden.
+
+| Garden | Payload | Code |
+|---|---|---|
+| 40 days | 732 chars | 105×105 |
+| 60 days | 1,097 chars | 125×125 |
+| 100 days | 1,508 chars | 145×145 |
+| 150 days+ | over the cap | falls back to the file backup |
+
+Past roughly a hundred days the sheet says so plainly and points at **Save backup file**,
+which has no size limit, rather than drawing a code nothing can read.
+
 **Restoring merges rather than replaces.** A day already on this device is only overwritten
 if the backup grew it further, so a restore can never lose progress, and re-running the same
 backup twice is a no-op. Your own targets survive a restore; the backup's are adopted only if
-yours are still the untouched defaults. That also makes this the cheap answer to the
-two-parent problem — pass a backup between devices to combine two gardens.
+yours are still the untouched defaults, and your own behaviour log and art style are never
+touched. Every route in — pasted text, a file, or a scanned QR — goes through the same merge,
+and every field is validated and clamped rather than trusted.
+
+That is also the answer to the **two-parent problem**: scan one phone's QR from the other and
+the two gardens combine, in either direction, as often as you like.
 
 ## Assets
 
@@ -204,7 +233,7 @@ art.html        dev sheet: every species × stage × health state
 assets/plants/  11 Lottie JSON — used only by the emoji style
 assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
-assets/vendor/  lottie-web
+assets/vendor/  lottie-web, and the QR encoder (loaded on demand)
 ```
 
 ## Ideas for v3

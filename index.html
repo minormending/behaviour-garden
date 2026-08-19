@@ -126,6 +126,36 @@
   </div>
 </div>
 
+<!-- share the garden as a QR code the other parent's camera can read -->
+<div class="sheet" id="qrSheet" hidden>
+  <div class="sheet-card tall">
+    <div class="sheet-head"><h2>Share the garden</h2><button class="x" data-close>✕</button></div>
+    <p class="muted small">Point the other phone's normal camera at this. It opens the garden
+      with everything in it — no app, no account, nothing uploaded. The code carries the data
+      itself, so it works even with no signal.</p>
+    <div id="qrBox" class="qrbox"></div>
+    <p id="qrNote" class="muted small"></p>
+    <div class="row">
+      <button id="qrCopyBtn" class="btn ghost small">Copy the link instead</button>
+    </div>
+  </div>
+</div>
+
+<!-- a garden arrived by link -->
+<div class="sheet" id="importSheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head"><h2>A garden was shared</h2><button class="x" data-close>✕</button></div>
+    <p id="importSummary"></p>
+    <p class="muted small">Merging keeps whichever version of a day grew further, so nothing
+      already on this device is lost. Your own behaviour log stays as it is.</p>
+    <div class="row">
+      <button id="importGo" class="btn good">Merge it in</button>
+      <button id="importCancel" class="btn ghost">Not now</button>
+    </div>
+    <p id="importMsg" class="small" hidden></p>
+  </div>
+</div>
+
 <!-- the dated list, for grown-ups checking back -->
 <div class="sheet" id="listSheet" hidden>
   <div class="sheet-card tall">
@@ -203,6 +233,7 @@
         <p id="storageNote" class="muted small"></p>
         <p id="backupNudge" class="nudge-banner" hidden></p>
         <div class="row">
+          <button id="qrBtn" class="btn good small">Share by QR</button>
           <button id="saveBtn" class="btn ghost small">Save backup file</button>
           <button id="exportBtn" class="btn ghost small">Copy backup</button>
           <button id="restoreBtn" class="btn ghost small">Restore…</button>

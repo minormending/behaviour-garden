@@ -47,6 +47,14 @@ Original licence text preserved at `assets/kenney/LICENSE-kenney.txt`.
 **[lottie-web](https://github.com/airbnb/lottie-web)** 5.13.0 — Airbnb, **MIT**.
 `assets/vendor/lottie.min.js`, unmodified. Licence at `assets/vendor/LICENSE-lottie-web.txt`.
 
+## QR encoder
+**[qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator)** 1.4.4 —
+Kazuhiko Arase, **MIT**. `assets/vendor/qrcode.js`, unmodified. Loaded on demand rather
+than at startup, since only a grown-up ever needs it. Encoding only — scanning is done by
+the receiving phone's own camera app, so no decoder is bundled.
+
+"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
+
 ## Everything else
 The illustrated plant set, the seed and bud, the picket fence, the soil mound, the app icon
 and all UI iconography were drawn for this project.
