@@ -14,6 +14,15 @@
   --card:#ffffff;     --line:#e3ece4;
   --good:#3fa65a;     --warn:#d98b2b;    --danger:#c9503f;
   --r:22px;
+
+  /* ── One number drives the whole scene. ──
+     Width-bound on a phone, height-bound in landscape, and capped so it stops
+     growing on a large monitor. Every dimension below is a fraction of it, so
+     the app fills a tablet instead of sitting phone-sized in the middle of it.
+     The fractions are the ratios the old fixed px caps produced at 375px wide,
+     so a phone renders exactly as it did before. */
+  --stage: min(92vw, 56dvh, 660px);
+  --ui: clamp(13px, calc(var(--stage) * 0.0406), 22px);
   --font: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN",
           "Varela Round", "Nunito", "Segoe UI", system-ui, sans-serif;
 }
@@ -42,7 +51,7 @@ body{
   box-shadow:-68px 10px 0 -8px #fff; opacity:.22; animation:drift 130s linear infinite reverse}
 @keyframes drift{from{transform:translateX(-40px)} to{transform:translateX(40px)}}
 
-#sun{position:absolute; top:12%; right:8%; width:clamp(56px,13vw,110px); aspect-ratio:1;
+#sun{position:absolute; top:12%; right:8%; width:calc(var(--stage) * .2); aspect-ratio:1;
      filter:drop-shadow(0 0 26px rgba(255,210,74,.55))}
 
 /* ground plane */
@@ -94,19 +103,20 @@ body{
         padding:calc(env(safe-area-inset-top) + 12px) 14px 0}
 .spacer{flex:1}
 .chip{background:rgba(255,255,255,.82); border:none; border-radius:999px;
-      padding:7px 14px; font:inherit; font-size:14px; font-weight:600; color:var(--ink);
+      padding:.5em .95em; font:inherit; font-size:var(--ui); font-weight:600; color:var(--ink);
       box-shadow:0 2px 8px rgba(20,60,30,.14); display:flex; align-items:center; gap:6px}
 .chip[hidden]{display:none}
-.chip.ghost{padding:9px; cursor:pointer; opacity:.72}
+.chip.ghost{padding:.5em; cursor:pointer; opacity:.72}
+.chip svg{width:calc(var(--ui) * 1.3); height:auto}
 .chip.ghost:active{transform:scale(.94)}
 
 /* ───────────────── the plant ───────────────── */
 #plotWrap{position:relative; z-index:2; flex:1; display:flex; flex-direction:column;
           align-items:center; justify-content:flex-end; padding-bottom:2vh; min-height:0}
-#plot{position:relative; display:flex; flex-direction:column; align-items:center; width:min(92vw,460px)}
+#plot{position:relative; display:flex; flex-direction:column; align-items:center; width:var(--stage)}
 
 #plantBox{
-  position:relative; width:min(66vw,272px); aspect-ratio:1;
+  position:relative; width:calc(var(--stage) * .717); aspect-ratio:1;
   display:grid; place-items:center;
   transform-origin:50% 100%;
   transition:transform .9s cubic-bezier(.2,.8,.3,1), filter .9s ease;
@@ -129,12 +139,12 @@ body{
 #plantBox.pop{animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
 @keyframes pop{0%{scale:1} 35%{scale:1.16} 100%{scale:1}}
 
-#mound{width:min(74vw,308px); margin-top:calc(-1 * min(13vw, 54px)); z-index:-1}
+#mound{width:calc(var(--stage) * .804); margin-top:calc(var(--stage) * -.141); z-index:-1}
 #mound svg{display:block; width:100%; filter:drop-shadow(0 6px 10px rgba(0,0,0,.18))}
 
-#plantName{margin:6px 0 0; font-size:clamp(17px,4.6vw,22px); font-weight:800;
+#plantName{margin:6px 0 0; font-size:calc(var(--ui) * 1.23); font-weight:800;
            color:#fff; text-shadow:0 2px 8px rgba(20,60,30,.45); min-height:1.4em}
-#hint{margin:4px 0 0; font-size:14px; font-weight:600; line-height:1.35;
+#hint{margin:4px 0 0; font-size:var(--ui); font-weight:600; line-height:1.35;
       color:#fff; text-shadow:0 1px 6px rgba(20,60,30,.55); opacity:.95; text-align:center;
       max-width:22ch; min-height:2.7em}
 
@@ -142,8 +152,8 @@ body{
    droop and desaturation do not drag it around or drain its colour. Animates
    `scale` and `opacity` only — never `transform` — so nothing can clash. */
 #faceBubble{
-  position:absolute; top:11%; left:calc(50% + min(17vw, 72px)); z-index:4;
-  width:clamp(52px, 15vw, 70px); aspect-ratio:1; pointer-events:none;
+  position:absolute; top:11%; left:calc(50% + var(--stage) * .185); z-index:4;
+  width:calc(var(--stage) * .163); aspect-ratio:1; pointer-events:none;
   background:#fff; border-radius:50% 50% 50% 10px;
   box-shadow:0 4px 14px rgba(20,60,30,.26);
   display:grid; place-items:center;
@@ -182,12 +192,16 @@ body{
 .fx{position:absolute; width:84px; height:84px; transform:translate(-50%,-50%)}
 
 /* ───────────────── kid bar ───────────────── */
-#kidbar{position:relative; z-index:3; display:flex; gap:10px; justify-content:center;
+#kidbar{position:relative; z-index:3; display:flex; gap:calc(var(--stage) * .029); justify-content:center;
         padding:0 12px calc(env(safe-area-inset-bottom) + 14px)}
 .bigbtn{
-  position:relative; flex:1; max-width:150px; border:none; border-radius:var(--r);
+  position:relative; flex:1;
+  /* Height-bound stages (landscape) would otherwise squeeze these to nothing,
+     so never cap a tap target below a thumb's width when there is room. */
+  max-width:max(calc(var(--stage) * .32), 112px);
+  border:none; border-radius:var(--r);
   background:rgba(255,255,255,.93); box-shadow:0 5px 0 rgba(30,80,40,.22), 0 8px 18px rgba(20,60,30,.18);
-  padding:12px 8px 10px; font:inherit; font-weight:800; font-size:14px; color:var(--ink);
+  padding:.85em .55em .7em; font:inherit; font-weight:800; font-size:var(--ui); color:var(--ink);
   display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;
   transition:transform .08s, box-shadow .08s;
 }
@@ -197,9 +211,11 @@ body{
 .bigbtn.primary{background:linear-gradient(180deg,#fff,#eaf7ff)}
 .bigbtn.primary:not([disabled]){animation:beckon 2.4s ease-in-out infinite}
 @keyframes beckon{0%,88%,100%{scale:1} 94%{scale:1.05}}
-.ic{flex:none}
+/* The SVGs carry width/height attributes; override them so they scale too. */
+.ic{flex:none; width:calc(var(--stage) * .116); height:auto}
+#stickerBtn .ic,#gardenBtn .ic{width:calc(var(--stage) * .099)}
 .badge{position:absolute; top:-8px; right:-6px; min-width:26px; height:26px; padding:0 6px;
-       border-radius:999px; background:var(--danger); color:#fff; font-size:14px; font-weight:800;
+       border-radius:999px; background:var(--danger); color:#fff; font-size:var(--ui); font-weight:800;
        display:grid; place-items:center; box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .badge[hidden]{display:none}
 
@@ -209,7 +225,7 @@ body{
        animation:fade .18s ease}
 .sheet[hidden]{display:none}
 @keyframes fade{from{opacity:0} to{opacity:1}}
-.sheet-card{width:min(640px,100%); max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+.sheet-card{width:min(720px,100%); max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
             background:var(--card); border-radius:26px 26px 0 0; padding:18px 18px calc(env(safe-area-inset-bottom) + 22px);
             animation:rise .26s cubic-bezier(.2,.9,.3,1)}
 .sheet-card.tall{min-height:62dvh}
@@ -264,6 +280,16 @@ body{
 .tgt{display:flex; gap:8px}
 .tgt input{flex:1; font:inherit; font-size:15px; padding:11px 13px; border:2px solid var(--line); border-radius:13px}
 .tgt button{border:none; background:#fdecea; color:var(--danger); border-radius:13px; width:44px; cursor:pointer; font-size:16px}
+
+/* Landscape phones. The fixed vertical chrome — topbar, name, hint, button bar —
+   costs more than a 56dvh scene can spare, and the plot ends up pushed up under
+   the topbar. Shrink the stage and stop reserving three lines for the hint. */
+@media (max-height: 560px){
+  :root{ --stage: min(92vw, 42dvh, 660px) }
+  #plantName{min-height:0; margin-top:2px}
+  #hint{min-height:0; margin-top:2px}
+  #plotWrap{padding-bottom:6px}
+}
 
 @media (prefers-reduced-motion:reduce){
   /* Never just shorten these: an infinite loop at .001s strobes rather than
@@ -431,7 +457,7 @@ body{
 /* ───────────────── QR share ───────────────── */
 #qrSheet{z-index:22}
 #importSheet{z-index:23}
-.qrbox{margin:14px auto 10px; width:min(78vw,320px); aspect-ratio:1;
+.qrbox{margin:14px auto 10px; width:min(78vw, 58dvh, 460px); aspect-ratio:1;
   background:#fff; border:2px solid var(--line); border-radius:18px; padding:10px;
   display:grid; place-items:center}
 .qrbox svg{width:100%; height:100%; display:block}
@@ -441,3 +467,21 @@ body{
 #importMsg[hidden]{display:none}
 #importMsg.ok{color:var(--good); font-weight:700}
 #importMsg.bad{color:var(--danger); font-weight:700}
+
+/* Grown-up sheets scale in width but their type is set in absolute px, so on a
+   tablet or a monitor it reads small. Bump the leaf text nodes explicitly rather
+   than trying to make a dozen tuned layouts inherit a new base size. */
+@media (min-width: 700px) and (min-height: 700px){
+  .sheet-head h2{font-size:25px}
+  .card h3{font-size:18px}
+  .small{font-size:15px}
+  .btn{font-size:17px}
+  .btn.small,.btn.nudge,.btn.tick .plus{font-size:15px}
+  .tgt input,#gateA{font-size:18px}
+  .gate-q{font-size:34px}
+  .fl b{font-size:14px}
+  .fl small{font-size:12px}
+  .cell small{font-size:12.5px}
+  #importSummary{font-size:17px}
+  .x{width:42px; height:42px; font-size:18px}
+}

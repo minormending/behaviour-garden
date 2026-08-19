@@ -32,6 +32,34 @@ open full-screen like an app, which also protects the saved garden (see
 Pages serves with a ten-minute cache, so after a deploy a hard refresh may be needed
 before a change shows up.
 
+## Sizing
+
+The whole kid-facing scene is driven off one token rather than a pile of independent
+caps, so it fills a tablet instead of sitting phone-sized in the middle of one:
+
+```css
+--stage: min(92vw, 56dvh, 660px);
+```
+
+Width-bound on a phone, height-bound in landscape, capped so it stops growing on a large
+monitor. Every dimension — plant, mound, buttons, icons, mood bubble, sun, scene type — is
+a fraction of it, and the fractions are the ratios the old fixed px caps produced at 375px
+wide, so a phone renders exactly as it did before.
+
+| Viewport | `--stage` | Plant | Button | Scene text |
+|---|---|---|---|---|
+| 320×568 | 294px | 214px | 93px | 13px |
+| 375×812 (phone) | 345px | 253px | 110px | 14px |
+| 820×1180 (tablet) | 660px | 485px | 211px | 22px |
+| 1440×900 (desktop) | 504px | 364px | 166px | 20px |
+| 844×390 (landscape) | 164px | 120px | 112px | 13px |
+
+Landscape phones get their own rule: the fixed vertical chrome costs more than a 56dvh
+scene can spare, so the stage shrinks to 42dvh and the hint stops reserving three lines —
+without it the plant is pushed up underneath the top bar. Tap targets never shrink below
+112px however narrow the stage gets. The grown-up sheets widen to 720px and bump their
+type on larger screens, and the QR grows to 460px, which makes it markedly easier to scan.
+
 ## How it works
 
 | Screen | Who it's for |
