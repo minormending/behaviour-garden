@@ -53,6 +53,7 @@ const DEFAULTS = {
   log: [],
   lastBackup: 0,
   style: 'illustrated',
+  gate: 'maths',
 };
 
 const ymd = (d = new Date()) =>
@@ -673,6 +674,40 @@ function pickSeed(id) {
 
 let gateAnswer = 0, unlocked = false;
 
+/* Two ways in. The maths question is the stronger of the two; a long press is
+   quicker for the adult but a child mashing buttons can stumble into it, which
+   is why maths stays the default. */
+const HOLD_MS = 1600;
+const gateMode = () => (S.gate === 'hold' ? 'hold' : 'maths');
+
+let holdTimer = 0, justHeld = false;
+
+function startHold() {
+  if (gateMode() !== 'hold' || unlocked) return;
+  const b = $('#parentBtn');
+  // keydown auto-repeats, and restarting the timer on every repeat would mean the
+  // hold never completes. Ignore anything that arrives while one is already running.
+  if (b.classList.contains('holding')) return;
+  b.style.setProperty('--holdms', HOLD_MS + 'ms');
+  b.classList.add('holding');
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => {
+    b.classList.remove('holding');
+    justHeld = true;                 // the pointerup that follows also fires click
+    unlocked = true;
+    openParent();
+  }, HOLD_MS);
+}
+
+function cancelHold() {
+  clearTimeout(holdTimer);
+  $('#parentBtn').classList.remove('holding');
+}
+
+function renderGateChoice() {
+  $$('#gateRow button').forEach(b => b.classList.toggle('on', gateMode() === b.dataset.gate));
+}
+
 function newGate() {
   const a = 6 + Math.floor(Math.random() * 9);    // 6–14
   const b = 13 + Math.floor(Math.random() * 15);   // 13–27
@@ -722,6 +757,7 @@ function renderPanel() {
   renderRatio();
   renderTargets();
   renderStyle();
+  renderGateChoice();
   renderData();
 }
 
@@ -839,6 +875,7 @@ function mergeState(inc) {
     S.targets = inc.targets.slice(0, 5).map(t => String(t).slice(0, 60));
   }
   if (typeof inc.lastBackup === 'number') S.lastBackup = Math.max(S.lastBackup || 0, inc.lastBackup);
+  // `gate` and `style` are per-device preferences and are deliberately not merged.
 
   save();
   return { added, improved, logs };
@@ -1059,7 +1096,28 @@ function init() {
   $('#viewToggle').addEventListener('click', () => { renderGarden(); show('#listSheet'); });
   $('#bed').addEventListener('scroll', () => $('#bedHint').classList.add('gone'), { passive: true });
   window.addEventListener('resize', () => { if (!$('#gardenSheet').hidden) renderMeadow(); });
-  $('#parentBtn').addEventListener('click', openParent);
+  const gear = $('#parentBtn');
+  gear.addEventListener('click', () => {
+    if (justHeld) { justHeld = false; return; }        // swallow the click after a hold
+    if (gateMode() === 'hold' && !unlocked) {
+      // Give nothing away to a child tapping it — just acknowledge the tap.
+      gear.classList.remove('nudge-hold');
+      void gear.offsetWidth;
+      gear.classList.add('nudge-hold');
+      return;
+    }
+    openParent();
+  });
+
+  gear.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+    gear.addEventListener(ev, cancelHold));
+  // Keyboard equivalent, so the panel is never unreachable without a pointer.
+  gear.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startHold(); }
+  });
+  gear.addEventListener('keyup', cancelHold);
+  gear.addEventListener('blur', cancelHold);
 
   $$('[data-close]').forEach(b => b.addEventListener('click', () => hide('#' + b.closest('.sheet').id)));
   // Backdrop-to-close, except the garden — it is a full-screen place, not a card,
@@ -1086,6 +1144,12 @@ function init() {
   });
 
   $('#flowersBtn').addEventListener('click', () => { renderFlowers(); show('#flowersSheet'); });
+
+  $$('#gateRow button').forEach(b => b.addEventListener('click', () => {
+    S.gate = b.dataset.gate;
+    save();
+    renderGateChoice();
+  }));
 
   $$('#styleRow button').forEach(b => b.addEventListener('click', () => {
     S.style = b.dataset.style;

@@ -28,6 +28,7 @@
 <!-- ───────────────── top bar ───────────────── -->
 <header id="topbar">
   <button id="parentBtn" class="chip ghost" aria-label="Grown-ups only">
+    <svg class="holdring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19"/></svg>
     <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5m7.4-2.6.1-.9-.1-.9 1.9-1.4a.5.5 0 0 0 .1-.6l-1.8-3.1a.5.5 0 0 0-.6-.2l-2.2.9a7 7 0 0 0-1.5-.9l-.3-2.4a.5.5 0 0 0-.5-.4h-3.6a.5.5 0 0 0-.5.4l-.3 2.4a7 7 0 0 0-1.5.9l-2.2-.9a.5.5 0 0 0-.6.2L3.5 9.1a.5.5 0 0 0 .1.6L5.5 11l-.1.9.1.9-1.9 1.4a.5.5 0 0 0-.1.6l1.8 3.1a.5.5 0 0 0 .6.2l2.2-.9a7 7 0 0 0 1.5.9l.3 2.4a.5.5 0 0 0 .5.4h3.6a.5.5 0 0 0 .5-.4l.3-2.4a7 7 0 0 0 1.5-.9l2.2.9a.5.5 0 0 0 .6-.2l1.8-3.1a.5.5 0 0 0-.1-.6Z"/></svg>
   </button>
   <div class="spacer"></div>
@@ -208,6 +209,17 @@
         <p class="muted small">Two or three, named the way you'd say them out loud. Keep them positive.</p>
         <div id="targetEdit" class="stack"></div>
         <button id="addTarget" class="btn ghost small">+ Add another</button>
+      </section>
+
+      <section class="card">
+        <h3>Getting in here</h3>
+        <div class="row" id="gateRow">
+          <button class="btn ghost small" data-gate="maths">Maths question</button>
+          <button class="btn ghost small" data-gate="hold">Hold the ⚙ button</button>
+        </div>
+        <p class="muted small">Holding is quicker for you, and a ring fills round the button
+          so you can see it working. It is the weaker of the two though — a determined child
+          mashing buttons can stumble into a long press, where they will not guess 13 × 22.</p>
       </section>
 
       <section class="card">

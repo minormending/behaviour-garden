@@ -65,7 +65,23 @@ type on larger screens, and the QR grows to 460px, which makes it markedly easie
 | Screen | Who it's for |
 |---|---|
 | The garden | The child. Water, tap the plant, add stickers, browse past days. |
-| ⚙ Grown-ups | The parent, behind a multiplication question a five-year-old won't pass. |
+| ⚙ Grown-ups | The parent, behind a gate the child is not meant to pass. |
+
+### Getting into the grown-ups panel
+
+Two options, switchable in the panel itself:
+
+- **Maths question** (default) — a two-digit multiplication. Strong: a five-year-old will
+  not guess 13 × 22.
+- **Hold the ⚙ button** — a 1.6-second press with a ring that sweeps round the button as it
+  fills. Quicker for you, but the weaker of the two: a determined child mashing buttons can
+  stumble into a long press. That trade is stated in the panel rather than buried here.
+
+Releasing early cancels and the ring snaps back. A plain tap in hold mode gives nothing
+away — it just nudges the button. The hold also works from the keyboard, so the panel is
+never unreachable without a pointer. Once you are in, you stay in for the rest of the
+session either way, and the choice is per-device: it is deliberately left out of the merge,
+so a shared garden cannot change how the other parent gets in.
 
 ## How the plant is feeling
 
