@@ -304,8 +304,8 @@ privacy boundary you need real accounts, which is a different app from this one.
 code, and the protection is `sync/firebase-rules.json` — explained line by line in
 `sync/RULES-EXPLAINED.md` — not their secrecy.
 
-**The `sync/` folder is vendored, not written here.** Its canonical copy lives in
-the sibling `kidsync` repo, shared with the other games. Edit it there and run
+**The `sync/` folder is vendored, not written here.** Its canonical copy is
+[minormending/kidsync](https://github.com/minormending/kidsync), shared with the other games. Edit it there and run
 `kidsync/tools/install`; `kidsync/tools/check` fails if a copy has drifted. What
 belongs to *this* app is the merge — `mergeGardens` in `app.js` — and the sharing
 card in the panel.
@@ -344,7 +344,7 @@ assets/plants/  11 Lottie JSON — used only by the emoji style
 assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
 assets/vendor/  lottie-web, and the QR encoder (loaded on demand)
-sync/           vendored from ../kidsync — edit it there, not here
+sync/           vendored from minormending/kidsync — edit it there, not here
 ```
 
 ## Ideas for v3
