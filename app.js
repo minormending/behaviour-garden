@@ -688,32 +688,13 @@ let gateAnswer = 0, unlocked = false;
 /* Two ways in. The maths question is the stronger of the two; a long press is
    quicker for the adult but a child mashing buttons can stumble into it, which
    is why maths stays the default. */
-const HOLD_MS = 1600;
 const gateMode = () => (S.gate === 'hold' ? 'hold' : 'maths');
 
-let holdTimer = 0, justHeld = false;
-
-function startHold() {
-  if (gateMode() !== 'hold' || unlocked) return;
-  const b = $('#parentBtn');
-  // keydown auto-repeats, and restarting the timer on every repeat would mean the
-  // hold never completes. Ignore anything that arrives while one is already running.
-  if (b.classList.contains('is-holding')) return;
-  b.style.setProperty('--gu-hold', HOLD_MS + 'ms');
-  b.classList.add('is-holding');
-  clearTimeout(holdTimer);
-  holdTimer = setTimeout(() => {
-    b.classList.remove('is-holding');
-    justHeld = true;                 // the pointerup that follows also fires click
-    unlocked = true;
-    openParent();
-  }, HOLD_MS);
-}
-
-function cancelHold() {
-  clearTimeout(holdTimer);
-  $('#parentBtn').classList.remove('is-holding');
-}
+/* The button, the hold, the ring and the tap-where-a-hold-was-needed nudge all
+   come from suite/gate.js. What stays here is which of the two gates is in
+   force: in maths mode a plain tap is the way through, because the question in
+   the sheet is doing the gating instead. */
+let gate = null;
 
 function renderGateChoice() {
   $$('#gateRow button').forEach(b => b.classList.toggle('btn--on', gateMode() === b.dataset.gate));
@@ -1253,6 +1234,15 @@ function init() {
   // shared garden opened while the app is already running arrives here instead.
   window.addEventListener('hashchange', checkIncomingShare);
 
+  gate = Gate.mount({
+    host: '#topbar',
+    prepend: true,                 // it leads the bar, before the spacer
+    inline: true,                  // sits in the bar rather than over the garden
+    label: 'Grown-ups only',
+    hold: () => gateMode() === 'hold' && !unlocked,
+    onOpen: () => { unlocked = unlocked || gateMode() === 'hold'; openParent(); },
+  });
+
   /* Removing is-landing at the top of the fade is what brings the plant, the
      buttons and the date up as the words go, so the garden reads as having
      been there the whole time. */
@@ -1282,29 +1272,6 @@ function init() {
   $('#viewToggle').addEventListener('click', () => { renderGarden(); show('#listSheet'); });
   $('#bed').addEventListener('scroll', () => $('#bedHint').classList.add('gone'), { passive: true });
   window.addEventListener('resize', () => { if (!$('#gardenSheet').hidden) renderMeadow(); });
-  const gear = $('#parentBtn');
-  gear.addEventListener('click', () => {
-    if (justHeld) { justHeld = false; return; }        // swallow the click after a hold
-    if (gateMode() === 'hold' && !unlocked) {
-      // Give nothing away to a child tapping it — just acknowledge the tap.
-      gear.classList.remove('nudge-hold');
-      void gear.offsetWidth;
-      gear.classList.add('nudge-hold');
-      return;
-    }
-    openParent();
-  });
-
-  gear.addEventListener('pointerdown', startHold);
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
-    gear.addEventListener(ev, cancelHold));
-  // Keyboard equivalent, so the panel is never unreachable without a pointer.
-  gear.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startHold(); }
-  });
-  gear.addEventListener('keyup', cancelHold);
-  gear.addEventListener('blur', cancelHold);
-
   $$('[data-close]').forEach(b => b.addEventListener('click', () => hide('#' + b.closest('.sheet').id)));
   // Backdrop-to-close, except the garden — it is a full-screen place, not a card,
   // and a tap on its sky should not dismiss it.
