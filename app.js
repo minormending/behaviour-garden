@@ -698,12 +698,12 @@ function startHold() {
   const b = $('#parentBtn');
   // keydown auto-repeats, and restarting the timer on every repeat would mean the
   // hold never completes. Ignore anything that arrives while one is already running.
-  if (b.classList.contains('holding')) return;
-  b.style.setProperty('--holdms', HOLD_MS + 'ms');
-  b.classList.add('holding');
+  if (b.classList.contains('is-holding')) return;
+  b.style.setProperty('--gu-hold', HOLD_MS + 'ms');
+  b.classList.add('is-holding');
   clearTimeout(holdTimer);
   holdTimer = setTimeout(() => {
-    b.classList.remove('holding');
+    b.classList.remove('is-holding');
     justHeld = true;                 // the pointerup that follows also fires click
     unlocked = true;
     openParent();
@@ -712,7 +712,7 @@ function startHold() {
 
 function cancelHold() {
   clearTimeout(holdTimer);
-  $('#parentBtn').classList.remove('holding');
+  $('#parentBtn').classList.remove('is-holding');
 }
 
 function renderGateChoice() {
