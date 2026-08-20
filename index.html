@@ -261,36 +261,8 @@
           </div>
         </section>
 
-        <section class="block">
-          <h2>Two devices at once</h2>
-          <p class="hint">Keeps two devices in step as you go &mdash; a watering added on the tablet
-            shows up on your phone a moment later. The QR below copies a garden once; this stays
-            connected. Both devices need to be online.</p>
-          <p id="syncState" class="stat"></p>
-
-          <div class="btn-row" id="syncOffRow" hidden>
-            <button id="syncStart" class="btn btn--go">Start sharing</button>
-            <button id="syncJoin" class="btn btn--quiet">Enter a code</button>
-          </div>
-
-          <div class="btn-row" id="syncOnRow" hidden>
-            <code id="syncCode" class="sync-code"></code>
-            <button id="syncStop" class="btn btn--quiet">Stop sharing here</button>
-          </div>
-
-          <div id="syncJoinBox" hidden>
-            <p class="hint">Type the code shown on the other device. Connecting <strong>merges</strong>
-              the two gardens &mdash; a day already here is kept unless the other device grew it further,
-              so nothing is ever lost.</p>
-            <input id="syncCodeInput" class="input input--code" type="text" placeholder="WORD-WORD-WORD-123"
-                   spellcheck="false" autocomplete="off" autocapitalize="characters">
-            <div class="btn-row">
-              <button id="syncJoinGo" class="btn btn--go">Connect</button>
-              <button id="syncJoinCancel" class="btn btn--quiet">Cancel</button>
-            </div>
-            <p id="syncJoinMsg" class="hint" hidden></p>
-          </div>
-        </section>
+        <!-- The sharing card renders in here: suite/sync-card.js. -->
+        <div id="syncCard"></div>
 
         <section class="block">
           <h2>Backup and moving</h2>
@@ -340,6 +312,7 @@
 
 <script src="suite/landing.js"></script>
 <script src="suite/gate.js"></script>
+<script src="suite/sync-card.js"></script>
 <script src="assets/vendor/lottie.min.js"></script>
 <script src="plants.js"></script>
 <script src="app.js"></script>
