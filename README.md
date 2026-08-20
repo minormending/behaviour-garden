@@ -294,7 +294,7 @@ anonymously — no email, no password, nothing anyone types, and the session is 
 after the first run — which means wholly unauthenticated access is refused and every write
 is stamped with a verifiable identity rather than a string the client made up. But
 anonymous sign-in is open to anyone, so it is not what makes a room private: the code is.
-Roughly 2.1 billion of them, and anyone holding one can read and write that garden.
+Roughly two billion of them, and anyone holding one can read and write that garden.
 
 That is a fair trade for growth stages and sticker positions, and it is exactly why nothing
 else goes near it — no names, no photos, no free text a child typed. If you want a real
