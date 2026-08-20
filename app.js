@@ -834,8 +834,13 @@ const num = (v, max) => {
   return Number.isFinite(n) ? Math.max(0, Math.min(max, Math.round(n))) : 0;
 };
 
-/** Union the two gardens. A day already here only loses to a backup that grew further. */
-function mergeState(inc) {
+/** Union `inc` into `target`, in place. A day already in `target` only loses to
+    an incoming day that grew further, so a merge can never cost a child progress.
+
+    Split out from mergeState so the same rules serve every route in — pasted
+    text, a file, a scanned QR, and now live sync. There is exactly one
+    definition of what merging two gardens means, and this is it. */
+function mergeGardens(target, inc) {
   if (!inc || typeof inc !== 'object' || !inc.days || typeof inc.days !== 'object') {
     throw new Error("That doesn't look like a Behaviour Garden backup.");
   }
@@ -853,32 +858,38 @@ function mergeState(inc) {
         .slice(0, 8)
         .map(s => ({ cp: s.cp, x: num(s.x, 100), y: num(s.y, 100) })),
     };
-    const cur = S.days[k];
-    if (!cur) { S.days[k] = day; added++; }
-    else if (day.growth > cur.growth) { S.days[k] = day; improved++; }
+    const cur = target.days[k];
+    if (!cur) { target.days[k] = day; added++; }
+    else if (day.growth > cur.growth) { target.days[k] = day; improved++; }
   }
 
-  const seen = new Set(S.log.map(e => e.t + '|' + e.k + '|' + (e.n || '')));
+  const seen = new Set(target.log.map(e => e.t + '|' + e.k + '|' + (e.n || '')));
   (Array.isArray(inc.log) ? inc.log : []).forEach(e => {
     if (!e || typeof e.t !== 'number' || !e.k) return;
     const id = e.t + '|' + e.k + '|' + (e.n || '');
     if (seen.has(id)) return;
     seen.add(id);
-    S.log.push({ t: e.t, k: e.k, n: typeof e.n === 'string' ? e.n.slice(0, 60) : undefined });
+    target.log.push({ t: e.t, k: e.k, n: typeof e.n === 'string' ? e.n.slice(0, 60) : undefined });
     logs++;
   });
-  S.log.sort((a, b) => a.t - b.t);
+  target.log.sort((a, b) => a.t - b.t);
 
-  // Only adopt the backup's targets if these are still the untouched defaults.
-  if (JSON.stringify(S.targets) === JSON.stringify(DEFAULTS.targets)
+  // Only adopt the incoming targets if these are still the untouched defaults.
+  if (JSON.stringify(target.targets) === JSON.stringify(DEFAULTS.targets)
       && Array.isArray(inc.targets) && inc.targets.length) {
-    S.targets = inc.targets.slice(0, 5).map(t => String(t).slice(0, 60));
+    target.targets = inc.targets.slice(0, 5).map(t => String(t).slice(0, 60));
   }
-  if (typeof inc.lastBackup === 'number') S.lastBackup = Math.max(S.lastBackup || 0, inc.lastBackup);
+  if (typeof inc.lastBackup === 'number') target.lastBackup = Math.max(target.lastBackup || 0, inc.lastBackup);
   // `gate` and `style` are per-device preferences and are deliberately not merged.
 
-  save();
   return { added, improved, logs };
+}
+
+/** Merge a backup into the live garden and persist it. */
+function mergeState(inc) {
+  const counts = mergeGardens(S, inc);
+  save();
+  return counts;
 }
 
 function renderStyle() {
