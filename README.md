@@ -307,8 +307,9 @@ code, and the protection is `sync/firebase-rules.json` — explained line by lin
 **The `sync/` folder is vendored, not written here.** Its canonical copy is
 [minormending/kidsync](https://github.com/minormending/kidsync), shared with the other games. Edit it there and run
 `kidsync/tools/install`; `kidsync/tools/check` fails if a copy has drifted. What
-belongs to *this* app is the merge — `mergeGardens` in `app.js` — and the sharing
-card in the panel.
+belongs to *this* app is the merge — `mergeGardens` in `app.js`. The sharing
+card is not: that is `suite/sync-card.js`, shared with the other games, and this
+app supplies only its wording and what to do once a room exists.
 
 **If it cannot start, nothing breaks.** The sync module is loaded with a dynamic import
 inside a try/catch, so an unreachable CDN, a blocked domain or a missing config is a line
@@ -321,22 +322,34 @@ stopping, never a bill.
 
 ## The shared look
 
-The front door the garden opens on, and the grown-ups panel's controls, are not
-written here. They are
+Four things are not written here. They are
 [minormending/kidsuite](https://github.com/minormending/kidsuite), vendored into
 `suite/` the same way `sync/` is, and shared with the other games so the three
 read as one suite rather than three unrelated apps.
+
+| | |
+|---|---|
+| `landing.css` + `landing.js` | the front door — the name, the line under it, the round play button, and the fade out of it |
+| `gate.js` | the hold-to-open button in the top bar |
+| `sync-card.js` | the whole *Two devices at once* card, including the pairing flow |
+| `grownup.css` | the panel's controls — cards, buttons, fields |
 
 Edit it there and run `kidsuite/tools/install`; `kidsuite/tools/check` fails if
 a copy has drifted. Never edit `suite/` directly.
 
 The shared files own the skeleton, this app owns the paint — which is what lets
 the door be sky-and-grass here while the other two are warm paper, and why the
-garden itself never had to change to join the suite. The `--ld-` and `--gu-`
-tokens are at the top of `styles.css`, with the three rules that are the
-garden's alone: covering the scenery with the door, taking the plant, the
-buttons and the date down while it is up, and wrapping the title so it stays
-clear of the sun.
+garden itself never had to change to join the suite. What is the garden's alone:
+
+- **The paint**: the `--ld-` and `--gu-` tokens at the top of `styles.css`, plus
+  three rules no other game needs — covering the scenery with the door, taking
+  the plant, the buttons and the date down while it is up, and wrapping the
+  title so it stays clear of the sun.
+- **Which gate is in force.** `gate.js` takes `hold` as a function, so the maths
+  question stays: in that mode a plain tap is the way through, because the
+  question in the sheet is doing the gating instead.
+- **The sharing card's prose**, and `_syncRoom` / `_syncEpoch`, which is how a
+  room this device created gets claimed and forgotten.
 
 ## Assets
 
