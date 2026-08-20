@@ -68,7 +68,18 @@ function load() {
   return structuredClone(DEFAULTS);
 }
 let S = load();
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { console.warn('could not save', e); } };
+
+/* Live sync is optional and lives further down the file. These three flags are
+   declared up here because save() is the one choke point every mutation already
+   passes through, which makes it the only honest place to notice a change. */
+let syncHandle   = null;    // the kidsync instance; null until (and unless) it boots
+let syncPushing  = false;   // set while we write, so we can ignore our own echo
+let syncApplying = false;   // set while a remote garden lands, to avoid a write loop
+
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { console.warn('could not save', e); }
+  syncPush();
+};
 
 const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 
@@ -892,6 +903,146 @@ function mergeState(inc) {
   return counts;
 }
 
+/* ─────────────── live sync ───────────────
+   Optional, and deliberately additive. The garden is a localStorage app first:
+   if this never loads, the network is gone, or no room is paired, everything
+   below is inert and the app behaves exactly as it did before.
+
+   What travels is only the garden. Three deliberate omissions:
+
+   • The behaviour log, for the same reason the QR leaves it out — it records one
+     adult's logging habits on one device, not the child's garden. It is also
+     the bulk of the payload. Measured on a 60-day garden the full state is
+     23.8KB of JSON against a 32KB room cap, so carrying the log would quietly
+     break sync somewhere around ten weeks in. Without it the same garden is
+     1.1KB, and a hundred days is still only about 1.5KB.
+   • `style`, because which art a child prefers is a property of the child in
+     front of this screen, not of the garden.
+   • `gate`, because a shared garden must not be able to change how the other
+     parent gets into their own panel.
+
+   The merge rules are mergeGardens — the same ones a restore uses. There is one
+   definition of merging two gardens and live sync does not get its own. */
+
+const SYNC_GAME   = 'behaviour-garden';
+const SYNC_FIELDS = ['v', 'targets', 'days', 'lastBackup'];
+
+const syncSubset = st => {
+  const out = {};
+  for (const f of SYNC_FIELDS) if (st[f] !== undefined) out[f] = st[f];
+  return out;
+};
+
+/** Publish the local garden. Debounced inside kidsync, so calling it from every
+    save() is cheap. No-op when sync never booted or a remote garden is landing. */
+function syncPush() {
+  if (!syncHandle || syncApplying) return;
+  syncPushing = true;
+  try { syncHandle.set(syncSubset(S)); }
+  catch (e) { console.warn('[sync] could not publish', e); }
+  finally { syncPushing = false; }
+}
+
+/** kidsync's merge hook. Runs on the shareable subset, never on the live state. */
+function syncMerge(local, remote) {
+  const base = Object.assign(structuredClone(DEFAULTS), structuredClone(local || {}));
+  try { mergeGardens(base, remote); }
+  catch (e) { return local; }          // an unusable remote garden changes nothing
+  return syncSubset(base);
+}
+
+/** A merged garden arrived from kidsync. Fold it into the live state and repaint.
+
+    Almost every arrival is additive, which is the whole point — a merge can
+    never cost a child a plant. Erasing is the one exception, and it needs care:
+    an erased garden arrives as an EMPTY garden, and an additive merge would
+    shrug and ignore it, leaving the other device's plants standing. So kidsync's
+    `_epoch` — bumped only by Erase everything — replaces instead of merging.
+
+    The guard that matters is `firstContact`. Joining a room must never be
+    destructive: a device carrying sixty days of garden that pairs with a room
+    someone once erased should merge into it, not be wiped by its old epoch. So a
+    bump only erases if we were already in that room when it happened. */
+function syncApply(incoming) {
+  if (syncPushing) return;             // the echo of our own set()
+
+  const room         = syncHandle ? syncHandle.roomCode : null;
+  const epoch        = incoming && incoming._epoch || 0;
+  const firstContact = !room || S._syncRoom !== room;
+
+  syncApplying = true;
+  try {
+    if (!firstContact && epoch > (S._syncEpoch || 0)) {
+      // Erase everything was pressed on another device. Per-device preferences
+      // survive it, exactly as they survive a restore.
+      const keep = { style: S.style, gate: S.gate };
+      S = Object.assign(structuredClone(DEFAULTS), keep);
+    }
+
+    const counts = mergeGardens(S, incoming);
+    if (room) S._syncRoom = room;
+    S._syncEpoch = Math.max(S._syncEpoch || 0, epoch);
+    save();                            // push stays suppressed while applying
+
+    plantSig = '';                     // force the plant to re-render
+    renderPlant();
+    if (!$('#parentSheet').hidden) renderPanel();
+    if (!$('#gardenSheet').hidden)  renderMeadow();
+    if (!$('#listSheet').hidden)    renderGarden();
+    return counts;
+  } catch (e) {
+    console.warn('[sync] ignoring an unusable remote garden:', e.message);
+  } finally {
+    syncApplying = false;
+  }
+}
+
+/** Paint the sharing card. Tolerates the markup being absent so this file stays
+    runnable on its own. */
+function renderSync() {
+  const note = $('#syncState');
+  if (!note) return;
+
+  const paired = syncHandle && syncHandle.roomCode;
+  const status = syncHandle ? syncHandle.status : 'local';
+
+  if (!syncHandle) {
+    note.textContent = 'Sharing is unavailable — this device could not reach the sync service. '
+      + 'The garden is safe and saved here as usual.';
+  } else if (!paired) {
+    note.textContent = 'Not sharing. This garden lives on this device only.';
+  } else if (status === 'synced') {
+    note.textContent = 'Sharing live with code ' + syncHandle.roomCode + ' \u2713';
+  } else if (status === 'offline') {
+    note.textContent = 'Sharing with code ' + syncHandle.roomCode
+      + ' \u2014 offline just now. Changes will catch up when the connection returns.';
+  } else {
+    note.textContent = 'Connecting\u2026';
+  }
+
+  const on  = $('#syncOnRow');
+  const off = $('#syncOffRow');
+  if (on)  on.hidden  = !syncHandle || !paired;
+  if (off) off.hidden = !syncHandle ||  paired;
+  const codeEl = $('#syncCode');
+  if (codeEl) codeEl.textContent = paired ? syncHandle.roomCode : '';
+}
+
+/* The contract the bridge module talks to. Kept explicit rather than letting a
+   module reach into this file's globals, so what crosses the boundary is
+   obvious to whoever reads this next. */
+window.GardenSync = {
+  game: SYNC_GAME,
+  initialState: () => syncSubset(S),
+  merge: syncMerge,
+  apply: syncApply,
+  attach(handle) {
+    syncHandle = handle;
+    renderSync();
+    handle.onStatusChange(renderSync);
+  },
+};
+
 function renderStyle() {
   $$('#styleRow button').forEach(b =>
     b.classList.toggle('on', (S.style || 'illustrated') === b.dataset.style));
@@ -1258,13 +1409,25 @@ function init() {
     }
   });
 
-  $('#resetBtn').addEventListener('click', () => {
+  $('#resetBtn').addEventListener('click', async () => {
+    const shared = syncHandle && syncHandle.roomCode;
     if (!confirm('Erase the whole garden and start again? This cannot be undone.')) return;
-    if (!confirm('Really sure? Every plant your child has grown will be gone.')) return;
+    if (!confirm(shared
+      ? 'Really sure? Every plant your child has grown will be gone \u2014 on this device and '
+        + 'on every device sharing code ' + syncHandle.roomCode + '.'
+      : 'Really sure? Every plant your child has grown will be gone.')) return;
     localStorage.removeItem(KEY);
     S = structuredClone(DEFAULTS);
+    // A plain write would lose this argument: the other device merges its fuller
+    // garden straight back over the top. reset() bumps the epoch, which overrides
+    // the merge everywhere, so an erase actually erases.
+    if (syncHandle) {
+      try { await syncHandle.reset(syncSubset(S)); }
+      catch (e) { console.warn('[sync] the erase did not publish', e); }
+    }
     plantSig = '';
     renderPlant();
+    renderSync();
     hide('#parentSheet');
   });
 
