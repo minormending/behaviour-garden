@@ -6,8 +6,12 @@ A static web app for a young child. Each day plants a seed. Watering it — earn
 being kind, and performed by the child — grows it through sprout, leaves and bud to a
 flower. Every day's plant is kept, so the garden fills up over weeks.
 
-No build step, no backend, no accounts, no network calls. Everything is stored in the
-browser's `localStorage` and every asset is vendored into the repo.
+No build step, no backend to run, and no accounts. Everything is stored in the browser's
+`localStorage` and every asset is vendored into the repo.
+
+Live sharing is the single exception, and it is off until you turn it on: it syncs the
+garden through a Firebase Realtime Database and is the only thing here that touches the
+network. Leave it off and the description above holds exactly.
 
 ## Running it
 
@@ -253,6 +257,54 @@ and every field is validated and clamped rather than trusted.
 That is also the answer to the **two-parent problem**: scan one phone's QR from the other and
 the two gardens combine, in either direction, as often as you like.
 
+### Sharing live
+
+A QR is a deliberate act every time, which is fine for moving a garden and tiring for
+keeping two in step. **Live sharing** does the continuous version: turn it on in the
+grown-ups panel, and the parent who did the watering is no longer the only one who sees
+it. One device presses *Start sharing* and reads out a code like `MARBLE-COMET-JELLY-334`;
+the other types it in. From then on both stay in step whenever they are online.
+
+**Only the garden travels.** Three things are deliberately left behind:
+
+| Left out | Why |
+|---|---|
+| The behaviour log | The same reason the QR omits it — it records one adult's logging habits, not the child's garden. It is also the bulk of the bytes: with the log a 60-day garden is 23.8KB against a 32KB room cap, so carrying it would break sync around ten weeks in. Without it, a hundred days is about 1.5KB. |
+| `style` | Which art a child prefers belongs to the child in front of the screen, not to the garden. |
+| `gate` | A shared garden must not be able to change how the other parent gets into their own panel. |
+
+**Merging is the same merge.** Live sync reuses `mergeGardens` — the function a pasted
+backup, a file and a scanned QR all go through. A day already here only loses to one that
+grew further, so the rule the whole app is built on survives being networked: nothing a
+child earned can be taken away by another device. Push a lower number at it deliberately
+and the other device pulls it back up.
+
+**Erasing is the exception, and it needs care.** An erased garden arrives as an *empty*
+one, which an additive merge would shrug at — leaving the plants standing on the other
+device and quietly undoing the erase. So *Erase everything* bumps an epoch that overrides
+the merge everywhere, and the second confirmation names the code it is about to erase
+across. Per-device preferences survive it.
+
+**Joining is never destructive.** A device carrying sixty days that pairs with a room
+someone erased last month merges into it rather than inheriting that old erase. An epoch
+only erases if this device was already in the room when the bump happened.
+
+**The code is the password.** There are no accounts — these are five-year-olds. Roughly
+2.1 billion codes is what keeps a room private, and anyone holding a code can read and
+write that garden. That is a fair trade for growth stages and sticker positions, and it is
+why nothing else goes near it: no names, no photos, no free text. `sync/firebase-config.js`
+holds public values by design — Firebase publishes them in client code, and the protection
+is `sync/firebase-rules.json`, not their secrecy.
+
+**If it cannot start, nothing breaks.** The sync module is loaded with a dynamic import
+inside a try/catch, so an unreachable CDN, a blocked domain or a missing config is a line
+in the console and a garden that behaves exactly as it did before. The app is a
+`localStorage` app that can sync, not a sync app that needs a network.
+
+Free-tier limits are far past anything a family will meet: 100 devices with the app open
+simultaneously, 1GB stored. There is no card on the account, so the failure mode is sync
+stopping, never a bill.
+
 ## Assets
 
 The illustrated plants are original work with no licence attached. The emoji style uses
@@ -278,6 +330,7 @@ assets/plants/  11 Lottie JSON — used only by the emoji style
 assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
 assets/vendor/  lottie-web, and the QR encoder (loaded on demand)
+sync/           live cross-device sync: the module, the bridge, config, DB rules
 ```
 
 ## Ideas for v3
