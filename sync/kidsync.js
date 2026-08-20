@@ -21,6 +21,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getDatabase, ref, onValue, set as dbSet, get as dbGet,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import {
+  getAuth, onAuthStateChanged, signInAnonymously,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // Room codes are read aloud and typed by children, so: no homophones, no words
 // that differ only by a doubled letter, nothing that invites a spelling debate.
@@ -68,6 +71,54 @@ function normalizeCode(input) {
 
 const MAX_STATE_BYTES = 32 * 1024; // must match the .validate rule in firebase-rules.json
 
+/** Sign in anonymously, so every write carries a verifiable identity.
+ *
+ *  This is not a login. Nobody types anything, no email or password exists, and
+ *  the session is restored from local storage on later visits — so it costs one
+ *  network round trip on a device's first ever run and nothing afterwards. It is
+ *  what lets the security rules require `auth != null` and pin each write's
+ *  `writer` field to a real uid, instead of trusting a string the client made up.
+ *
+ *  To be clear about what it does and does not buy: anonymous sign-in is open to
+ *  anyone, so it does not make a room private. The room code is still the only
+ *  secret. What it does is shut out completely unauthenticated access, make
+ *  every write attributable, and let Firebase apply its own per-user abuse
+ *  limits.
+ *
+ *  Failure is deliberately not fatal. If Anonymous is switched off in the
+ *  Firebase console this throws auth/configuration-not-found, and refusing to
+ *  run would break sync over a setting the rules might not require yet. So it
+ *  warns, returns null, and lets the rules decide. */
+async function signInQuietly(auth) {
+  // The first emission reflects the restored session, so this is a local check.
+  const restored = await new Promise((resolve) => {
+    const stop = onAuthStateChanged(
+      auth,
+      (u) => { stop(); resolve(u); },
+      () => { stop(); resolve(null); }
+    );
+  });
+  if (restored) return restored.uid;
+
+  try {
+    const cred = await signInAnonymously(auth);
+    return cred.user.uid;
+  } catch (e) {
+    const code = e.code || e.message;
+    console.warn(
+      `[kidsync] anonymous sign-in failed (${code}); continuing unauthenticated. ` +
+      (code === "auth/configuration-not-found"
+        ? "Enable it in the Firebase console under Authentication \u2192 Sign-in method \u2192 Anonymous."
+        : "Writes will be refused if the rules require auth.")
+    );
+    return null;
+  }
+}
+
+/** Never let sign-in hang the caller; an app must not wait on a network blip. */
+const withTimeout = (p, ms, fallback) =>
+  Promise.race([p, new Promise((r) => setTimeout(() => r(fallback), ms))]);
+
 export async function createSync({
   firebaseConfig,
   game,
@@ -103,6 +154,7 @@ export async function createSync({
   let roomCode = localStorage.getItem(roomKey) || null;
   let status = "local";
   let db = null, roomRef = null, unsubscribeRoom = null, unsubscribeConn = null;
+  let authRef = null;
   let connected = false, connKnown = false;
 
   /** Single place that decides the status, so joining a room and losing the
@@ -138,7 +190,11 @@ export async function createSync({
   const configured = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_ME";
   if (configured) {
     try {
-      db = getDatabase(initializeApp(firebaseConfig, `kidsync-${game}`));
+      const app = initializeApp(firebaseConfig, `kidsync-${game}`);
+      db = getDatabase(app);
+      authRef = getAuth(app);
+      // Awaited so the first read/write does not race the sign-in and get denied.
+      await withTimeout(signInQuietly(authRef), 10000, null);
       unsubscribeConn = onValue(ref(db, ".info/connected"), (snap) => {
         connKnown = true;
         connected = !!snap.val();
@@ -165,7 +221,12 @@ export async function createSync({
     }
     rev += 1;
     try {
-      await dbSet(roomRef, { state: payload, rev, writer: deviceId, updatedAt: Date.now() });
+      // Read the uid at write time rather than caching it, so a sign-in that
+      // completed after startup is still reflected. Falls back to the local
+      // device id, which the rules will refuse if they require auth — which is
+      // the correct outcome, and it says so in the console.
+      const writer = (authRef && authRef.currentUser && authRef.currentUser.uid) || deviceId;
+      await dbSet(roomRef, { state: payload, rev, writer, updatedAt: Date.now() });
       pendingWrite = false;
     } catch (e) {
       // Offline writes are queued by the SDK and replay on reconnect, so this

@@ -289,12 +289,20 @@ across. Per-device preferences survive it.
 someone erased last month merges into it rather than inheriting that old erase. An epoch
 only erases if this device was already in the room when the bump happened.
 
-**The code is the password.** There are no accounts — these are five-year-olds. Roughly
-2.1 billion codes is what keeps a room private, and anyone holding a code can read and
-write that garden. That is a fair trade for growth stages and sticker positions, and it is
-why nothing else goes near it: no names, no photos, no free text. `sync/firebase-config.js`
-holds public values by design — Firebase publishes them in client code, and the protection
-is `sync/firebase-rules.json`, not their secrecy.
+**The code is the password.** Two things guard a garden. Each device signs in
+anonymously — no email, no password, nothing anyone types, and the session is remembered
+after the first run — which means wholly unauthenticated access is refused and every write
+is stamped with a verifiable identity rather than a string the client made up. But
+anonymous sign-in is open to anyone, so it is not what makes a room private: the code is.
+Roughly 2.1 billion of them, and anyone holding one can read and write that garden.
+
+That is a fair trade for growth stages and sticker positions, and it is exactly why nothing
+else goes near it — no names, no photos, no free text a child typed. If you want a real
+privacy boundary you need real accounts, which is a different app from this one.
+
+`sync/firebase-config.js` holds public values by design: Firebase publishes them in client
+code, and the protection is `sync/firebase-rules.json` — explained line by line in
+`sync/RULES-EXPLAINED.md` — not their secrecy.
 
 **If it cannot start, nothing breaks.** The sync module is loaded with a dynamic import
 inside a try/catch, so an unreachable CDN, a blocked domain or a missing config is a line
@@ -330,7 +338,7 @@ assets/plants/  11 Lottie JSON — used only by the emoji style
 assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
 assets/vendor/  lottie-web, and the QR encoder (loaded on demand)
-sync/           live cross-device sync: the module, the bridge, config, DB rules
+sync/           live cross-device sync: module, bridge, config, DB rules + notes
 ```
 
 ## Ideas for v3
