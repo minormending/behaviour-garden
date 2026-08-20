@@ -30,19 +30,10 @@
 </div>
 
 <!-- ───────────────── the front door ─────────────────
-     The same object the other two games open on, painted on the garden
-     rather than on paper. #scene is already behind it, so fading this
-     column out walks the child straight into the garden. -->
-<div id="landingScreen" class="landing-screen">
-  <div class="landing" id="landing">
-    <h1 class="landing-name">Behaviour Garden</h1>
-    <p class="landing-lede">A good day waters the plant. Nothing is ever lost.</p>
-    <button id="landingGo" class="landing-go" aria-label="Go to the garden">
-      <svg viewBox="0 0 24 24" class="landing-go-glyph" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
-    </button>
-    <p class="landing-cap">Tap to start</p>
-  </div>
-</div>
+     Renders in here, painted on the garden rather than on paper: #scene is
+     already behind it, so fading the column out walks the child into the
+     place. Markup and fade: suite/landing.js. -->
+<div id="landingScreen" class="landing-screen"></div>
 
 <!-- ───────────────── top bar ───────────────── -->
 <header id="topbar">
@@ -358,6 +349,7 @@
   </div>
 </div>
 
+<script src="suite/landing.js"></script>
 <script src="assets/vendor/lottie.min.js"></script>
 <script src="plants.js"></script>
 <script src="app.js"></script>

@@ -1234,17 +1234,12 @@ function skyByHour() {
 
 /* ─────────────── wiring ─────────────── */
 
-/* The front door fades and the garden is already behind it. Called by the
-   button, and by an arriving garden -- a grown-up who has just opened a
-   share link has done their tapping, and should not have to tap again to
-   see the card asking what to do with it. */
-function leaveLanding() {
-  const screen = $('#landingScreen');
-  if (!screen || screen.hidden) return;
-  document.body.classList.remove('is-landing');
-  $('#landing').classList.add('is-going');
-  setTimeout(() => { screen.hidden = true; }, 260);
-}
+/* The door's own handle, from suite/landing.js. Kept so an arriving garden can
+   dismiss it: a grown-up who has just opened a share link has done their
+   tapping, and should not have to tap again to see the card asking what to do
+   with it. */
+let door = null;
+function leaveLanding() { if (door) door.leave(); }
 
 function init() {
   skyByHour();
@@ -1258,7 +1253,17 @@ function init() {
   // shared garden opened while the app is already running arrives here instead.
   window.addEventListener('hashchange', checkIncomingShare);
 
-  $('#landingGo').addEventListener('click', leaveLanding);
+  /* Removing is-landing at the top of the fade is what brings the plant, the
+     buttons and the date up as the words go, so the garden reads as having
+     been there the whole time. */
+  door = Landing.open({
+    host: '#landingScreen',
+    name: 'Behaviour Garden',
+    lede: 'A good day waters the plant. Nothing is ever lost.',
+    label: 'Go to the garden',
+    onGoing: () => document.body.classList.remove('is-landing'),
+    onLeave: () => { $('#landingScreen').hidden = true; },
+  });
 
   $('#waterBtn').addEventListener('click', doWater);
   $('#plantBox').addEventListener('click', () => {
