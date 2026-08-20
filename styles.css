@@ -21,6 +21,17 @@
      the app fills a tablet instead of sitting phone-sized in the middle of it.
      The fractions are the ratios the old fixed px caps produced at 375px wide,
      so a phone renders exactly as it did before. */
+  /* The front door's skeleton is in landing.css; the paint is ours. White
+     type over sky and grass needs the same shadow #plantName already uses,
+     and the button borrows the kid buttons' white-on-green. */
+  --ld-ink:     #ffffff;
+  --ld-lede:    #ffffff;
+  --ld-cap:     #ffffff;
+  --ld-shadow:  0 2px 10px rgba(20, 60, 30, .5);
+  --ld-go-bg:   #ffffff;
+  --ld-go-ink:  var(--good);
+  --ld-go-deep: rgba(30, 80, 40, .34);
+
   --stage: min(92vw, 56dvh, 660px);
   --ui: clamp(13px, calc(var(--stage) * 0.0406), 22px);
   --font: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN",
@@ -97,6 +108,25 @@ body{
   -webkit-mask:url(assets/kenney/grass-d.png) repeat-x bottom/auto 100%;
           mask:url(assets/kenney/grass-d.png) repeat-x bottom/auto 100%;
 }
+
+/* The front door. Above the scenery and the chrome, below the sheets, so a
+   garden arriving by link can still put its card on top. */
+.landing-screen{position:fixed; inset:0; z-index:10; display:flex;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.landing-screen[hidden]{display:none}
+/* Sitting a little high puts the name and the button in the sky, where white
+   type has something to sit on; low down it would be white on white cloud and
+   then white on pale grass. */
+.landing-screen .landing{justify-content:center; padding-bottom:26vh}
+
+/* While the door is shut the garden is scenery only -- no plant, no buttons,
+   no date. They fade back in as the door fades out, which is what makes the
+   garden feel like it was there the whole time rather than being built on
+   arrival. The scenery itself never moves. */
+#topbar,#plotWrap,#kidbar{transition:opacity .4s ease}
+body.is-landing #topbar,
+body.is-landing #plotWrap,
+body.is-landing #kidbar{opacity:0; pointer-events:none}
 
 /* ───────────────── chrome ───────────────── */
 #topbar{position:relative; z-index:3; display:flex; gap:8px; align-items:center;
@@ -326,6 +356,8 @@ body{
    the topbar. Shrink the stage and stop reserving three lines for the hint. */
 @media (max-height: 560px){
   :root{ --stage: min(92vw, 42dvh, 660px) }
+  /* Lifting the column off the grass costs height that is not there. */
+  .landing-screen .landing{padding-bottom:8vh}
   #plantName{min-height:0; margin-top:2px}
   #hint{min-height:0; margin-top:2px}
   #plotWrap{padding-bottom:6px}

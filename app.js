@@ -1206,6 +1206,7 @@ async function checkIncomingShare() {
       `${keys.length} day${keys.length === 1 ? '' : 's'} · ${bloomed} in full bloom · `
       + `${fresh} not on this device yet`;
     $('#importMsg').hidden = true;
+    leaveLanding();
     show('#importSheet');
   } catch (e) {
     console.warn('could not read the shared garden', e);
@@ -1233,6 +1234,18 @@ function skyByHour() {
 
 /* ─────────────── wiring ─────────────── */
 
+/* The front door fades and the garden is already behind it. Called by the
+   button, and by an arriving garden -- a grown-up who has just opened a
+   share link has done their tapping, and should not have to tap again to
+   see the card asking what to do with it. */
+function leaveLanding() {
+  const screen = $('#landingScreen');
+  if (!screen || screen.hidden) return;
+  document.body.classList.remove('is-landing');
+  $('#landing').classList.add('is-going');
+  setTimeout(() => { screen.hidden = true; }, 260);
+}
+
 function init() {
   skyByHour();
   initStorage();
@@ -1244,6 +1257,8 @@ function init() {
   // A link that differs only by its fragment does not reload the page, so a
   // shared garden opened while the app is already running arrives here instead.
   window.addEventListener('hashchange', checkIncomingShare);
+
+  $('#landingGo').addEventListener('click', leaveLanding);
 
   $('#waterBtn').addEventListener('click', doWater);
   $('#plantBox').addEventListener('click', () => {

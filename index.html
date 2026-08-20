@@ -16,7 +16,7 @@
 <!-- Also shared. The front door is the same object in all three. -->
 <link rel="stylesheet" href="landing.css">
 </head>
-<body>
+<body class="is-landing">
 
 <!-- ───────────────── scenery (Kenney CC0 silhouettes, tinted via mask) ───────────────── -->
 <div id="scene" aria-hidden="true">
@@ -28,6 +28,21 @@
   <div id="hedgeNear"></div>
   <div id="ground"></div>
   <div id="grassStrip"></div>
+</div>
+
+<!-- ───────────────── the front door ─────────────────
+     The same object the other two games open on, painted on the garden
+     rather than on paper. #scene is already behind it, so fading this
+     column out walks the child straight into the garden. -->
+<div id="landingScreen" class="landing-screen">
+  <div class="landing" id="landing">
+    <h1 class="landing-name">Behaviour Garden</h1>
+    <p class="landing-lede">A good day waters the plant. Nothing is ever lost.</p>
+    <button id="landingGo" class="landing-go" aria-label="Go to the garden">
+      <svg viewBox="0 0 24 24" class="landing-go-glyph" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+    </button>
+    <p class="landing-cap">Tap to start</p>
+  </div>
 </div>
 
 <!-- ───────────────── top bar ───────────────── -->
