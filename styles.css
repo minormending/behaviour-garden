@@ -119,6 +119,13 @@ body{
    then white on pale grass. */
 .landing-screen .landing{justify-content:center; padding-bottom:26vh}
 
+/* This is the longest of the three names and the sun sits in the top-right of
+   the scenery, so on a tablet the one-line title ran under it -- 46px of
+   overlap at 768 wide. Wrapping to two lines takes the horizontal overlap to
+   zero at every size. Lowering the column instead only cleared the sun by a
+   pixel or two and would foul it again at another aspect ratio. */
+.landing-screen .landing-name{max-width:9ch}
+
 /* While the door is shut the garden is scenery only -- no plant, no buttons,
    no date. They fade back in as the door fades out, which is what makes the
    garden feel like it was there the whole time rather than being built on
