@@ -69,7 +69,7 @@ type on larger screens, and the QR grows to 460px, which makes it markedly easie
 | Screen | Who it's for |
 |---|---|
 | The garden | The child. Water, tap the plant, add stickers, browse past days. |
-| ⚙ Grown-ups | The parent, behind a gate the child is not meant to pass. |
+| Grown-ups | The parent, behind a gate the child is not meant to pass. Reached from the round button in the top bar — the same one the other games use. |
 
 ### Getting into the grown-ups panel
 
@@ -77,7 +77,7 @@ Two options, switchable in the panel itself:
 
 - **Maths question** (default) — a two-digit multiplication. Strong: a five-year-old will
   not guess 13 × 22.
-- **Hold the ⚙ button** — a 1.6-second press with a ring that sweeps round the button as it
+- **Hold the corner button** — a 1.6-second press with a ring that sweeps round it as it
   fills. Quicker for you, but the weaker of the two: a determined child mashing buttons can
   stumble into a long press. That trade is stated in the panel rather than buried here.
 
@@ -319,6 +319,25 @@ Free-tier limits are far past anything a family will meet: 100 devices with the 
 simultaneously, 1GB stored. There is no card on the account, so the failure mode is sync
 stopping, never a bill.
 
+## The shared look
+
+The front door the garden opens on, and the grown-ups panel's controls, are not
+written here. They are
+[minormending/kidsuite](https://github.com/minormending/kidsuite), vendored into
+`suite/` the same way `sync/` is, and shared with the other games so the three
+read as one suite rather than three unrelated apps.
+
+Edit it there and run `kidsuite/tools/install`; `kidsuite/tools/check` fails if
+a copy has drifted. Never edit `suite/` directly.
+
+The shared files own the skeleton, this app owns the paint — which is what lets
+the door be sky-and-grass here while the other two are warm paper, and why the
+garden itself never had to change to join the suite. The `--ld-` and `--gu-`
+tokens are at the top of `styles.css`, with the three rules that are the
+garden's alone: covering the scenery with the door, taking the plant, the
+buttons and the date down while it is up, and wrapping the title so it stays
+clear of the sun.
+
 ## Assets
 
 The illustrated plants are original work with no licence attached. The emoji style uses
@@ -344,6 +363,7 @@ assets/plants/  11 Lottie JSON — used only by the emoji style
 assets/effects/ 9 Lottie JSON — water, sparkles, stickers, sun (both styles)
 assets/kenney/  17 silhouette PNGs (4 in use) used as tintable CSS masks
 assets/vendor/  lottie-web, and the QR encoder (loaded on demand)
+suite/          vendored from minormending/kidsuite — edit it there, not here
 sync/           vendored from minormending/kidsync — edit it there, not here
 ```
 
