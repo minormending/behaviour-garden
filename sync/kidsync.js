@@ -103,6 +103,15 @@ export async function createSync({
   let roomCode = localStorage.getItem(roomKey) || null;
   let status = "local";
   let db = null, roomRef = null, unsubscribeRoom = null, unsubscribeConn = null;
+  let connected = false, connKnown = false;
+
+  /** Single place that decides the status, so joining a room and losing the
+      network cannot disagree about what to display. */
+  const applyStatus = () => {
+    if (!roomCode) return setStatus("local");
+    if (!connKnown) return setStatus("connecting");
+    setStatus(connected ? "synced" : "offline");
+  };
   let flushTimer = null, pendingWrite = false;
 
   const persistLocal = () => {
@@ -131,8 +140,9 @@ export async function createSync({
     try {
       db = getDatabase(initializeApp(firebaseConfig, `kidsync-${game}`));
       unsubscribeConn = onValue(ref(db, ".info/connected"), (snap) => {
-        if (!roomCode) return setStatus("local");
-        setStatus(snap.val() ? "synced" : "offline");
+        connKnown = true;
+        connected = !!snap.val();
+        applyStatus();
       });
     } catch (e) {
       console.warn("[kidsync] Firebase failed to initialise; local-only mode.", e.message);
@@ -241,7 +251,10 @@ export async function createSync({
     roomCode = code;
     roomRef = ref(db, roomPath(code));
     localStorage.setItem(roomKey, code);
-    setStatus("connecting");
+    // Re-derive rather than assume "connecting": by the time a room is joined the
+    // connection is usually already up, and .info/connected does not fire again
+    // for a state it has already reported — which used to leave the status stuck.
+    applyStatus();
     unsubscribeRoom = onValue(
       roomRef,
       adoptRemote,
@@ -339,7 +352,7 @@ export async function createSync({
       roomCode = null;
       rev = 0;
       localStorage.removeItem(roomKey);
-      setStatus("local");
+      applyStatus();
     },
   };
 }

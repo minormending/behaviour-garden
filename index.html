@@ -240,8 +240,40 @@
       </section>
 
       <section class="card">
+        <h3>Live sharing</h3>
+        <p class="muted small">Keeps two devices in step as you go — a watering added on the tablet
+          shows up on your phone a moment later. The QR below copies a garden once; this stays
+          connected. Both devices need to be online.</p>
+        <p id="syncState" class="muted small"></p>
+
+        <div class="row" id="syncOffRow" hidden>
+          <button id="syncStart" class="btn good small">Start sharing</button>
+          <button id="syncJoin" class="btn ghost small">Enter a code</button>
+        </div>
+
+        <div class="row" id="syncOnRow" hidden>
+          <code id="syncCode" class="sync-code"></code>
+          <button id="syncStop" class="btn ghost small">Stop sharing here</button>
+        </div>
+
+        <div id="syncJoinBox" hidden>
+          <p class="muted small">Type the code shown on the other device. Connecting <strong>merges</strong>
+            the two gardens — a day already here is kept unless the other device grew it further,
+            so nothing is ever lost.</p>
+          <input id="syncCodeInput" type="text" placeholder="WORD-WORD-WORD-123"
+                 spellcheck="false" autocomplete="off" autocapitalize="characters">
+          <div class="row">
+            <button id="syncJoinGo" class="btn good small">Connect</button>
+            <button id="syncJoinCancel" class="btn ghost small">Cancel</button>
+          </div>
+          <p id="syncJoinMsg" class="small" hidden></p>
+        </div>
+      </section>
+
+      <section class="card">
         <h3>Data</h3>
-        <p class="muted small">Everything lives in this browser only. Nothing is uploaded anywhere.</p>
+        <p class="muted small">The garden lives in this browser. Nothing leaves the device unless you
+          turn on Live sharing above — and then only the garden itself, never the behaviour log.</p>
         <p id="storageNote" class="muted small"></p>
         <p id="backupNudge" class="nudge-banner" hidden></p>
         <div class="row">

@@ -770,6 +770,7 @@ function renderPanel() {
   renderStyle();
   renderGateChoice();
   renderData();
+  renderSync();
 }
 
 function flash(btn, msg) {
@@ -1407,6 +1408,82 @@ function init() {
       msg.className = 'small bad';
       msg.textContent = err instanceof SyntaxError ? "That isn't valid backup text." : err.message;
     }
+  });
+
+  /* ── live sharing ── */
+
+  const JOIN_ERRORS = {
+    malformed:          'That code is not complete — three words and three numbers.',
+    'not-found':        'No garden found with that code. Check for a typo, or press Start sharing '
+                        + 'on the other device for a fresh one.',
+    network:            'Could not reach the network just now. Try again in a moment.',
+    'not-configured':   'Sharing is unavailable on this device.',
+  };
+
+  $('#syncStart').addEventListener('click', async () => {
+    if (!syncHandle) return;
+    const btn = $('#syncStart');
+    btn.disabled = true;
+    try {
+      const code = await syncHandle.createRoom();
+      // Record the room now. syncApply would otherwise only learn it when a
+      // remote change arrives, and until then a remote erase would look like
+      // first contact and be merged away instead of honoured. Safe to claim
+      // here because we seeded this room ourselves, so its epoch is ours.
+      S._syncRoom = code;
+      save();
+      renderSync();
+    }
+    catch (e) { console.warn('[sync] could not start sharing', e); flash(btn, 'Could not start'); }
+    finally { btn.disabled = false; }
+  });
+
+  $('#syncJoin').addEventListener('click', () => {
+    $('#syncJoinBox').hidden = false;
+    $('#syncJoinMsg').hidden = true;
+    $('#syncCodeInput').value = '';
+    $('#syncCodeInput').focus();
+  });
+
+  $('#syncJoinCancel').addEventListener('click', () => { $('#syncJoinBox').hidden = true; });
+
+  async function joinRoomFromInput() {
+    if (!syncHandle) return;
+    const msg = $('#syncJoinMsg'), go = $('#syncJoinGo');
+    go.disabled = true;
+    const res = await syncHandle.joinRoom($('#syncCodeInput').value);
+    go.disabled = false;
+    msg.hidden = false;
+    if (res.ok) {
+      // Deliberately not setting S._syncRoom here. The first state to arrive from
+      // a room we have just joined must count as first contact so it MERGES; if
+      // that room was erased at some point in the past, claiming it now would let
+      // its old epoch wipe the garden we just brought with us. syncApply records
+      // the room once it has safely merged.
+      msg.className = 'small ok';
+      msg.textContent = 'Connected — the two gardens are merging now.';
+      $('#syncJoinBox').hidden = true;
+      renderSync();
+    } else {
+      msg.className = 'small bad';
+      msg.textContent = JOIN_ERRORS[res.reason] || 'That did not work. Try again.';
+    }
+  }
+
+  $('#syncJoinGo').addEventListener('click', joinRoomFromInput);
+  $('#syncCodeInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') joinRoomFromInput();
+  });
+
+  $('#syncStop').addEventListener('click', () => {
+    if (!syncHandle) return;
+    syncHandle.leaveRoom();
+    // Forget the room, so rejoining it later counts as first contact and merges
+    // rather than inheriting an erase that happened while we were away.
+    delete S._syncRoom;
+    delete S._syncEpoch;
+    save();
+    renderSync();
   });
 
   $('#resetBtn').addEventListener('click', async () => {

@@ -271,6 +271,8 @@ body{
 .card h3{margin:0 0 4px; font-size:16px}
 .stack{display:flex; flex-direction:column; gap:8px; margin-top:10px}
 .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+/* display:flex beats the hidden attribute's default display:none, so say it again */
+.row[hidden]{display:none}
 .muted{color:var(--muted)} .small{font-size:13px; line-height:1.45} .credits{margin-top:16px}
 .err{color:var(--danger); font-weight:700}
 .gate-q{font-size:30px; font-weight:800; margin:6px 0}
@@ -322,6 +324,13 @@ body{
 .nudge-banner{background:#fdf5e8; border:2px solid #f0e0c2; color:#8a6a2f;
   border-radius:14px; padding:11px 13px; margin:10px 0 0; font-size:13px; font-weight:700; line-height:1.45}
 .nudge-banner[hidden]{display:none}
+
+/* live sharing */
+#syncCodeInput{width:100%; box-sizing:border-box; font:inherit; font-size:16px; padding:11px 13px;
+  border:2px solid var(--line); border-radius:13px; text-transform:uppercase; margin-top:8px}
+.sync-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px; font-weight:700;
+  letter-spacing:.03em; background:#eef2f5; border-radius:10px; padding:10px 12px;
+  align-self:center; word-break:break-all}
 #restoreMsg[hidden]{display:none}
 #restoreMsg.ok{color:var(--good); font-weight:700}
 #restoreMsg.bad{color:var(--danger); font-weight:700}
