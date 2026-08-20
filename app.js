@@ -716,7 +716,7 @@ function cancelHold() {
 }
 
 function renderGateChoice() {
-  $$('#gateRow button').forEach(b => b.classList.toggle('on', gateMode() === b.dataset.gate));
+  $$('#gateRow button').forEach(b => b.classList.toggle('btn--on', gateMode() === b.dataset.gate));
 }
 
 function newGate() {
@@ -739,7 +739,7 @@ function renderPanel() {
   good.innerHTML = '';
   [...S.targets, 'Something else kind'].forEach(t => {
     const b = document.createElement('button');
-    b.className = 'btn tick';
+    b.className = 'btn btn--tick';
     b.innerHTML = `<span>${escapeHTML(t)}</span><span class="plus">+1 💧</span>`;
     b.addEventListener('click', () => {
       today().water++;                       // resolve the day at tap time, not at render time
@@ -753,7 +753,7 @@ function renderPanel() {
   miss.innerHTML = '';
   [...S.targets, 'Something else'].forEach(t => {
     const b = document.createElement('button');
-    b.className = 'btn nudge';
+    b.className = 'btn btn--miss';
     b.textContent = t;
     b.addEventListener('click', () => {
       const day = today();
@@ -1049,7 +1049,7 @@ window.SyncHost = {
 
 function renderStyle() {
   $$('#styleRow button').forEach(b =>
-    b.classList.toggle('on', (S.style || 'illustrated') === b.dataset.style));
+    b.classList.toggle('btn--on', (S.style || 'illustrated') === b.dataset.style));
 }
 
 function renderData() {
@@ -1372,13 +1372,13 @@ function init() {
     msg.hidden = false;
     try {
       const r = mergeState(incoming);
-      msg.className = 'small ok';
+      msg.className = 'hint ok';
       msg.textContent = `${r.added} day${r.added === 1 ? '' : 's'} added, ${r.improved} grown further.`;
       incoming = null;
       plantSig = '';
       renderPlant();
     } catch (err) {
-      msg.className = 'small bad';
+      msg.className = 'hint bad';
       msg.textContent = err.message;
     }
   });
@@ -1399,7 +1399,7 @@ function init() {
     msg.hidden = false;
     try {
       const r = mergeState(JSON.parse($('#restoreText').value.trim()));
-      msg.className = 'small ok';
+      msg.className = 'hint ok';
       msg.textContent = r.added + ' day' + (r.added === 1 ? '' : 's') + ' added, '
         + r.improved + ' grown further, ' + r.logs + ' log entries merged.';
       $('#restoreText').value = '';
@@ -1408,7 +1408,7 @@ function init() {
       renderPanel();
       msg.hidden = false;
     } catch (err) {
-      msg.className = 'small bad';
+      msg.className = 'hint bad';
       msg.textContent = err instanceof SyntaxError ? "That isn't valid backup text." : err.message;
     }
   });
@@ -1463,12 +1463,12 @@ function init() {
       // that room was erased at some point in the past, claiming it now would let
       // its old epoch wipe the garden we just brought with us. syncApply records
       // the room once it has safely merged.
-      msg.className = 'small ok';
+      msg.className = 'hint ok';
       msg.textContent = 'Connected — the two gardens are merging now.';
       $('#syncJoinBox').hidden = true;
       renderSync();
     } else {
-      msg.className = 'small bad';
+      msg.className = 'hint bad';
       msg.textContent = JOIN_ERRORS[res.reason] || 'That did not work. Try again.';
     }
   }

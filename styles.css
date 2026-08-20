@@ -234,6 +234,8 @@ body{
 .sheet-head h2{margin:0; font-size:20px}
 .x{border:none; background:#f0f4f1; width:36px; height:36px; border-radius:999px;
    font-size:16px; cursor:pointer; color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:13px; line-height:1.45}
 
 .tray{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:10px; margin:6px 0 12px}
 .tray button{aspect-ratio:1; border:2px solid var(--line); background:#fbfdfb; border-radius:18px;
@@ -248,40 +250,76 @@ body{
 .cell small{display:block; margin-top:4px; color:var(--muted); font-size:11px; font-weight:700}
 .cell.today .pot{border-color:var(--good); box-shadow:0 0 0 3px rgba(63,166,90,.18)}
 
-/* ───────────────── parent panel ───────────────── */
-.card{border:2px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px}
-.card.quiet{background:#fcfaf6; border-color:#eee2cd}
-.card h3{margin:0 0 4px; font-size:16px}
-.stack{display:flex; flex-direction:column; gap:8px; margin-top:10px}
-.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-/* display:flex beats the hidden attribute's default display:none, so say it again */
-.row[hidden]{display:none}
-.muted{color:var(--muted)} .small{font-size:13px; line-height:1.45} .credits{margin-top:16px}
-.err{color:var(--danger); font-weight:700}
-.gate-q{font-size:30px; font-weight:800; margin:6px 0}
-#gateA{font:inherit; font-size:20px; padding:12px 14px; border:2px solid var(--line);
-       border-radius:14px; width:150px; margin-right:8px}
+/* ───────────────── grown-up panel: only what the garden adds ─────────────────
 
-.btn{font:inherit; font-weight:700; font-size:15px; border:none; border-radius:14px;
-     padding:13px 16px; background:#eef4ef; color:var(--ink); cursor:pointer; text-align:left}
-.btn:active{scale:.985}
-.btn.wide{width:100%; text-align:center}
-.btn.small{padding:9px 13px; font-size:14px}
-.btn.good{background:var(--good); color:#fff}
-.btn.ghost{background:#fff; border:2px solid var(--line)}
-.btn.danger{background:#fdecea; color:var(--danger)}
-.btn.on{background:var(--good); color:#fff; border-color:var(--good)}
-.btn.tick{background:#e9f6ec; border:2px solid #cfe9d6; display:flex; justify-content:space-between; align-items:center; gap:10px}
-.btn.tick .plus{background:var(--good); color:#fff; border-radius:999px; padding:3px 11px; font-size:14px; flex:none}
-.btn.nudge{background:#fdf5e8; border:2px solid #f0e0c2; color:#8a6a2f; font-size:14px; padding:11px 14px}
+   The paper, the cards, the buttons, the fields and the sharing panel all come
+   from grownup.css, shared with Letter Sounds and Tidy Up. What is left here is
+   the parts no other app has: the maths gate, the good/miss lists, the ratio bar
+   and the target editor. */
 
-.ratio{display:flex; height:22px; border-radius:999px; overflow:hidden; background:#eef4ef; margin:10px 0 6px}
-.ratio span{display:block; transition:width .4s ease}
-#ratioGood{background:var(--good)} #ratioBad{background:var(--warn)}
+/* The panel is the one sheet that is not for the child, so it covers the
+   garden completely rather than sliding up over it. */
+.sheet.gu-full{align-items:stretch; padding:0; background:var(--gu-paper)}
+.sheet.gu-full .sheet-card{width:100%; height:100%; max-height:none;
+  border-radius:0; padding:0; background:var(--gu-paper)}
 
-.tgt{display:flex; gap:8px}
-.tgt input{flex:1; font:inherit; font-size:15px; padding:11px 13px; border:2px solid var(--line); border-radius:13px}
-.tgt button{border:none; background:#fdecea; color:var(--danger); border-radius:13px; width:44px; cursor:pointer; font-size:16px}
+/* The two grown-up sheets that still open over the garden keep the sheet
+   shape and only borrow the controls. */
+.sheet-card.grownup{padding-top:18px; background:var(--card)}
+
+/* #panel is what the gate reveals, so it has to space its own cards. */
+.grownup #panel{display:flex; flex-direction:column; gap:1.5rem}
+.grownup #panel[hidden]{display:none}
+
+.grownup .stack{display:flex; flex-direction:column; gap:.5rem}
+
+/* ---- the maths gate ---- */
+.grownup .gate-q{font-size:30px; font-weight:700; margin:.2rem 0}
+.grownup .gate-row{display:flex; gap:.5rem; align-items:center}
+.grownup .gate-row .input{width:150px}
+
+/* ---- noticing something good, and needing a reminder ----
+   Both are lists of the same targets, so they are the same object twice.
+   Only the good one carries a reward, and it is the one that should be
+   easiest to reach for.
+
+   Doubled up as .btn.btn--tick so these beat the plain .grownup .btn in
+   grownup.css, which is loaded after this file and would otherwise win
+   the tie on source order. */
+.grownup .btn.btn--tick{
+  justify-content:space-between; gap:.6rem; width:100%;
+  min-height:46px; padding:.6rem .8rem; text-align:left;
+  background:var(--gu-accent-bg); border-color:#cfe0d7; font-weight:600;
+}
+.grownup .btn.btn--tick .plus{
+  flex:none; border-radius:999px; padding:.15em .7em;
+  background:var(--gu-accent); color:#fff; font-size:.85rem; font-weight:600;
+}
+.grownup .btn.btn--miss{
+  width:100%; min-height:44px; padding:.55rem .8rem; text-align:left;
+  justify-content:flex-start;
+  background:var(--gu-amber-bg); border-color:var(--gu-amber-line); color:var(--gu-amber);
+}
+
+/* ---- how the last week went ---- */
+.grownup .ratio{display:flex; height:22px; border-radius:999px; overflow:hidden;
+  background:var(--gu-soft)}
+.grownup .ratio span{display:block; transition:width .4s ease}
+.grownup #ratioGood{background:var(--gu-accent)}
+.grownup #ratioBad{background:var(--gu-warm)}
+
+/* ---- what we're working on ---- */
+.grownup .tgt{display:flex; gap:.4rem}
+.grownup .tgt input{
+  flex:1; min-width:0; min-height:40px; padding:0 .7rem;
+  border:1px solid var(--gu-line); border-radius:var(--gu-r-sm);
+  background:var(--gu-surface); color:var(--gu-ink);
+  font-family:var(--gu-font); font-size:.95rem;
+}
+.grownup .tgt button{
+  flex:none; width:44px; border:1px solid var(--gu-rose-line); border-radius:var(--gu-r-sm);
+  background:var(--gu-rose-bg); color:var(--gu-rose); font-size:16px; cursor:pointer;
+}
 
 /* Landscape phones. The fixed vertical chrome — topbar, name, hint, button bar —
    costs more than a 56dvh scene can spare, and the plot ends up pushed up under
@@ -300,24 +338,11 @@ body{
 }
 
 /* ───────────────── backup & restore ───────────────── */
-#restoreBox{margin-top:12px}
-#restoreBox[hidden]{display:none}
-#restoreText{width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
-  padding:10px 12px; border:2px solid var(--line); border-radius:13px; resize:vertical}
-.nudge-banner{background:#fdf5e8; border:2px solid #f0e0c2; color:#8a6a2f;
-  border-radius:14px; padding:11px 13px; margin:10px 0 0; font-size:13px; font-weight:700; line-height:1.45}
-.nudge-banner[hidden]{display:none}
-
-/* live sharing */
-#syncCodeInput{width:100%; box-sizing:border-box; font:inherit; font-size:16px; padding:11px 13px;
-  border:2px solid var(--line); border-radius:13px; text-transform:uppercase; margin-top:8px}
-.sync-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px; font-weight:700;
-  letter-spacing:.03em; background:#eef2f5; border-radius:10px; padding:10px 12px;
-  align-self:center; word-break:break-all}
-#restoreMsg[hidden]{display:none}
-#restoreMsg.ok{color:var(--good); font-weight:700}
-#restoreMsg.bad{color:var(--danger); font-weight:700}
-
+.grownup #restoreBox{display:flex; flex-direction:column; gap:.75rem}
+.grownup #restoreBox[hidden]{display:none}
+.grownup #restoreText{width:100%; font-family:var(--gu-mono); font-size:12px;
+  padding:10px 12px; border:1px solid var(--gu-line); border-radius:var(--gu-r-sm);
+  background:var(--gu-surface); color:var(--gu-ink); resize:vertical}
 /* ───────────────── hand-authored plant art ───────────────── */
 .plantsvg{width:100%; height:100%; display:block; overflow:visible}
 
@@ -474,23 +499,18 @@ body{
   font-weight:700; color:var(--warn); line-height:1.5}
 #importSummary{margin:6px 0 4px; font-size:15px; font-weight:700}
 #importMsg[hidden]{display:none}
-#importMsg.ok{color:var(--good); font-weight:700}
-#importMsg.bad{color:var(--danger); font-weight:700}
 
 /* Grown-up sheets scale in width but their type is set in absolute px, so on a
    tablet or a monitor it reads small. Bump the leaf text nodes explicitly rather
    than trying to make a dozen tuned layouts inherit a new base size. */
 @media (min-width: 700px) and (min-height: 700px){
   .sheet-head h2{font-size:25px}
-  .card h3{font-size:18px}
-  .small{font-size:15px}
-  .btn{font-size:17px}
-  .btn.small,.btn.nudge,.btn.tick .plus{font-size:15px}
-  .tgt input,#gateA{font-size:18px}
-  .gate-q{font-size:34px}
   .fl b{font-size:14px}
   .fl small{font-size:12px}
   .cell small{font-size:12.5px}
   #importSummary{font-size:17px}
   .x{width:42px; height:42px; font-size:18px}
+  /* The grown-up sheets scale themselves — see grownup.css. */
+  .grownup .gate-q{font-size:34px}
+  .grownup .tgt input{font-size:18px}
 }

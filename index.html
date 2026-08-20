@@ -139,31 +139,31 @@
 
 <!-- share the garden as a QR code the other parent's camera can read -->
 <div class="sheet" id="qrSheet" hidden>
-  <div class="sheet-card tall">
+  <div class="sheet-card tall grownup">
     <div class="sheet-head"><h2>Share the garden</h2><button class="x" data-close>✕</button></div>
     <p class="muted small">Point the other phone's normal camera at this. It opens the garden
       with everything in it — no app, no account, nothing uploaded. The code carries the data
       itself, so it works even with no signal.</p>
     <div id="qrBox" class="qrbox"></div>
     <p id="qrNote" class="muted small"></p>
-    <div class="row">
-      <button id="qrCopyBtn" class="btn ghost small">Copy the link instead</button>
+    <div class="btn-row">
+      <button id="qrCopyBtn" class="btn btn--quiet">Copy the link instead</button>
     </div>
   </div>
 </div>
 
 <!-- a garden arrived by link -->
 <div class="sheet" id="importSheet" hidden>
-  <div class="sheet-card">
+  <div class="sheet-card grownup">
     <div class="sheet-head"><h2>A garden was shared</h2><button class="x" data-close>✕</button></div>
     <p id="importSummary"></p>
     <p class="muted small">Merging keeps whichever version of a day grew further, so nothing
       already on this device is lost. Your own behaviour log stays as it is.</p>
-    <div class="row">
-      <button id="importGo" class="btn good">Merge it in</button>
-      <button id="importCancel" class="btn ghost">Not now</button>
+    <div class="btn-row">
+      <button id="importGo" class="btn btn--go">Merge it in</button>
+      <button id="importCancel" class="btn btn--quiet">Not now</button>
     </div>
-    <p id="importMsg" class="small" hidden></p>
+    <p id="importMsg" class="hint" hidden></p>
   </div>
 </div>
 
@@ -176,142 +176,168 @@
   </div>
 </div>
 
-<!-- ───────────────── grown-ups ───────────────── -->
-<div class="sheet" id="parentSheet" hidden>
-  <div class="sheet-card tall">
-    <div class="sheet-head"><h2>Grown-ups</h2><button class="x" data-close>✕</button></div>
+<!-- ───────────────── grown-ups ─────────────────
+     The one surface here that is not for the child, so it stops looking like
+     the garden and takes the same paper, cards and controls as Letter Sounds
+     and Tidy Up. It keeps class="sheet" because [data-close] finds what to
+     close with closest('.sheet'). -->
+<div class="sheet gu-full" id="parentSheet" hidden>
+  <div class="sheet-card grownup">
+    <div class="gu-sheet">
 
-    <div id="gate">
-      <p class="muted">Quick check so little hands don't wander in.</p>
-      <p id="gateQ" class="gate-q"></p>
-      <input id="gateA" type="number" inputmode="numeric" placeholder="answer" autocomplete="off">
-      <button id="gateGo" class="btn wide">Unlock</button>
-      <p id="gateErr" class="err" hidden>Not quite — try again.</p>
-    </div>
+      <header class="gu-head">
+        <h1>Grown-ups</h1>
+        <button class="btn btn--plain" data-close>Done</button>
+      </header>
 
-    <div id="panel" hidden>
-      <section class="card">
-        <h3>Noticed something good</h3>
-        <p class="muted small">This is the button you want to be reaching for. Each tap gives one watering.</p>
-        <div id="goodList" class="stack"></div>
-      </section>
-
-      <section class="card">
-        <h3>Made it right</h3>
-        <p class="muted small">After a rough moment: they apologised, helped fix it, or tried again calmly.</p>
-        <button id="repairBtn" class="btn good wide">They repaired it — perk the plant back up</button>
-      </section>
-
-      <section class="card quiet">
-        <h3>Needed a reminder</h3>
-        <p class="muted small">The plant droops a little. Nothing is ever lost — one watering brings it back.</p>
-        <div id="missList" class="stack"></div>
-      </section>
-
-      <section class="card">
-        <h3>Your ratio, last 7 days</h3>
-        <div id="ratioBar" class="ratio"><span id="ratioGood"></span><span id="ratioBad"></span></div>
-        <p id="ratioText" class="muted small"></p>
-      </section>
-
-      <section class="card">
-        <h3>What we're working on</h3>
-        <p class="muted small">Two or three, named the way you'd say them out loud. Keep them positive.</p>
-        <div id="targetEdit" class="stack"></div>
-        <button id="addTarget" class="btn ghost small">+ Add another</button>
-      </section>
-
-      <section class="card">
-        <h3>Getting in here</h3>
-        <div class="row" id="gateRow">
-          <button class="btn ghost small" data-gate="maths">Maths question</button>
-          <button class="btn ghost small" data-gate="hold">Hold the ⚙ button</button>
+      <div id="gate" class="block">
+        <p class="hint">Quick check so little hands don&rsquo;t wander in.</p>
+        <p id="gateQ" class="gate-q"></p>
+        <div class="gate-row">
+          <input id="gateA" class="input" type="number" inputmode="numeric" placeholder="answer" autocomplete="off">
+          <button id="gateGo" class="btn btn--go">Unlock</button>
         </div>
-        <p class="muted small">Holding is quicker for you, and a ring fills round the button
-          so you can see it working. It is the weaker of the two though — a determined child
-          mashing buttons can stumble into a long press, where they will not guess 13 × 22.</p>
-      </section>
+        <p id="gateErr" class="hint bad" hidden>Not quite &mdash; try again.</p>
+      </div>
 
-      <section class="card">
-        <h3>Flowers</h3>
-        <p class="muted small">Which species have appeared so far, and how far each one got.
-          While today is still a seed you can also choose what it will grow into.</p>
-        <button id="flowersBtn" class="btn ghost wide">See all flowers</button>
-      </section>
+      <div id="panel" hidden>
+        <section class="block">
+          <h2>Noticed something good</h2>
+          <p class="hint">This is the button you want to be reaching for. Each tap gives one watering.</p>
+          <div id="goodList" class="stack"></div>
+        </section>
 
-      <section class="card">
-        <h3>Garden style</h3>
-        <p class="muted small">Two sets of art for the same garden. Show your child both and let
-          them pick — they are the one who has to want to open this.</p>
-        <div class="row" id="styleRow">
-          <button class="btn ghost small" data-style="illustrated">Illustrated</button>
-          <button class="btn ghost small" data-style="emoji">Emoji</button>
-        </div>
-      </section>
+        <section class="block">
+          <h2>Made it right</h2>
+          <p class="hint">After a rough moment: they apologised, helped fix it, or tried again calmly.</p>
+          <button id="repairBtn" class="btn btn--go btn--wide">They repaired it &mdash; perk the plant back up</button>
+        </section>
 
-      <section class="card">
-        <h3>Live sharing</h3>
-        <p class="muted small">Keeps two devices in step as you go — a watering added on the tablet
-          shows up on your phone a moment later. The QR below copies a garden once; this stays
-          connected. Both devices need to be online.</p>
-        <p id="syncState" class="muted small"></p>
+        <section class="block">
+          <h2>Needed a reminder</h2>
+          <p class="hint">The plant droops a little. Nothing is ever lost &mdash; one watering brings it back.</p>
+          <div id="missList" class="stack"></div>
+        </section>
 
-        <div class="row" id="syncOffRow" hidden>
-          <button id="syncStart" class="btn good small">Start sharing</button>
-          <button id="syncJoin" class="btn ghost small">Enter a code</button>
-        </div>
+        <section class="block">
+          <h2>Your ratio, last 7 days</h2>
+          <div id="ratioBar" class="ratio"><span id="ratioGood"></span><span id="ratioBad"></span></div>
+          <p id="ratioText" class="hint"></p>
+        </section>
 
-        <div class="row" id="syncOnRow" hidden>
-          <code id="syncCode" class="sync-code"></code>
-          <button id="syncStop" class="btn ghost small">Stop sharing here</button>
-        </div>
-
-        <div id="syncJoinBox" hidden>
-          <p class="muted small">Type the code shown on the other device. Connecting <strong>merges</strong>
-            the two gardens — a day already here is kept unless the other device grew it further,
-            so nothing is ever lost.</p>
-          <input id="syncCodeInput" type="text" placeholder="WORD-WORD-WORD-123"
-                 spellcheck="false" autocomplete="off" autocapitalize="characters">
-          <div class="row">
-            <button id="syncJoinGo" class="btn good small">Connect</button>
-            <button id="syncJoinCancel" class="btn ghost small">Cancel</button>
+        <section class="block">
+          <h2>What we&rsquo;re working on</h2>
+          <p class="hint">Two or three, named the way you&rsquo;d say them out loud. Keep them positive.</p>
+          <div id="targetEdit" class="stack"></div>
+          <div class="btn-row">
+            <button id="addTarget" class="btn btn--quiet">+ Add another</button>
           </div>
-          <p id="syncJoinMsg" class="small" hidden></p>
-        </div>
-      </section>
+        </section>
 
-      <section class="card">
-        <h3>Data</h3>
-        <p class="muted small">The garden lives in this browser. Nothing leaves the device unless you
-          turn on Live sharing above — and then only the garden itself, never the behaviour log.</p>
-        <p id="storageNote" class="muted small"></p>
-        <p id="backupNudge" class="nudge-banner" hidden></p>
-        <div class="row">
-          <button id="qrBtn" class="btn good small">Share by QR</button>
-          <button id="saveBtn" class="btn ghost small">Save backup file</button>
-          <button id="exportBtn" class="btn ghost small">Copy backup</button>
-          <button id="restoreBtn" class="btn ghost small">Restore…</button>
-          <button id="resetBtn" class="btn danger small">Erase everything</button>
-        </div>
-
-        <div id="restoreBox" hidden>
-          <p class="muted small">Paste a backup below. Restoring <strong>merges</strong> it in — a day
-            that is already here is kept unless the backup grew it further, so nothing is ever lost.
-            You can also use this to pull another parent's garden onto this device.</p>
-          <textarea id="restoreText" rows="4" placeholder="Paste backup here" spellcheck="false"></textarea>
-          <div class="row">
-            <button id="restoreGo" class="btn good small">Merge it in</button>
-            <button id="restoreCancel" class="btn ghost small">Cancel</button>
+        <section class="block">
+          <h2>Getting in here</h2>
+          <div class="btn-row" id="gateRow">
+            <button class="btn btn--quiet" data-gate="maths">Maths question</button>
+            <button class="btn btn--quiet" data-gate="hold">Hold the corner button</button>
           </div>
-          <p id="restoreMsg" class="small" hidden></p>
-        </div>
-      </section>
+          <p class="hint">Holding is quicker for you, and a ring fills round the button
+            so you can see it working &mdash; the same way in as the other apps. It is the
+            weaker of the two though: a determined child mashing buttons can stumble into
+            a long press, where they will not guess 13 &times; 22.</p>
+        </section>
 
-      <p class="muted small credits">
-        Plants &amp; effects: <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noopener">Noto Animated Emoji</a> by Google (CC BY 4.0).
-        Foliage: <a href="https://kenney.nl/assets/foliage-sprites" target="_blank" rel="noopener">Kenney</a> (CC0).
-        Player: <a href="https://github.com/airbnb/lottie-web" target="_blank" rel="noopener">lottie-web</a> (MIT).
-      </p>
+        <section class="block">
+          <h2>Flowers</h2>
+          <p class="hint">Which species have appeared so far, and how far each one got.
+            While today is still a seed you can also choose what it will grow into.</p>
+          <div class="btn-row">
+            <button id="flowersBtn" class="btn btn--wide">See all flowers</button>
+          </div>
+        </section>
+
+        <section class="block">
+          <h2>Garden style</h2>
+          <p class="hint">Two sets of art for the same garden. Show your child both and let
+            them pick &mdash; they are the one who has to want to open this.</p>
+          <div class="btn-row" id="styleRow">
+            <button class="btn btn--quiet" data-style="illustrated">Illustrated</button>
+            <button class="btn btn--quiet" data-style="emoji">Emoji</button>
+          </div>
+        </section>
+
+        <section class="block">
+          <h2>Two devices at once</h2>
+          <p class="hint">Keeps two devices in step as you go &mdash; a watering added on the tablet
+            shows up on your phone a moment later. The QR below copies a garden once; this stays
+            connected. Both devices need to be online.</p>
+          <p id="syncState" class="stat"></p>
+
+          <div class="btn-row" id="syncOffRow" hidden>
+            <button id="syncStart" class="btn btn--go">Start sharing</button>
+            <button id="syncJoin" class="btn btn--quiet">Enter a code</button>
+          </div>
+
+          <div class="btn-row" id="syncOnRow" hidden>
+            <code id="syncCode" class="sync-code"></code>
+            <button id="syncStop" class="btn btn--quiet">Stop sharing here</button>
+          </div>
+
+          <div id="syncJoinBox" hidden>
+            <p class="hint">Type the code shown on the other device. Connecting <strong>merges</strong>
+              the two gardens &mdash; a day already here is kept unless the other device grew it further,
+              so nothing is ever lost.</p>
+            <input id="syncCodeInput" class="input input--code" type="text" placeholder="WORD-WORD-WORD-123"
+                   spellcheck="false" autocomplete="off" autocapitalize="characters">
+            <div class="btn-row">
+              <button id="syncJoinGo" class="btn btn--go">Connect</button>
+              <button id="syncJoinCancel" class="btn btn--quiet">Cancel</button>
+            </div>
+            <p id="syncJoinMsg" class="hint" hidden></p>
+          </div>
+        </section>
+
+        <section class="block">
+          <h2>Backup and moving</h2>
+          <p class="hint">The garden lives in this browser. Nothing leaves the device unless you
+            turn on sharing above &mdash; and then only the garden itself, never the behaviour log.</p>
+          <p id="storageNote" class="hint"></p>
+          <p id="backupNudge" class="nudge" hidden></p>
+          <div class="btn-row">
+            <button id="qrBtn" class="btn btn--go">Share by QR</button>
+            <button id="saveBtn" class="btn btn--quiet">Save backup file</button>
+            <button id="exportBtn" class="btn btn--quiet">Copy backup</button>
+            <button id="restoreBtn" class="btn btn--quiet">Restore&hellip;</button>
+          </div>
+
+          <div id="restoreBox" hidden>
+            <p class="hint">Paste a backup below. Restoring <strong>merges</strong> it in &mdash; a day
+              that is already here is kept unless the backup grew it further, so nothing is ever lost.
+              You can also use this to pull another parent&rsquo;s garden onto this device.</p>
+            <textarea id="restoreText" rows="4" placeholder="Paste backup here" spellcheck="false"></textarea>
+            <div class="btn-row">
+              <button id="restoreGo" class="btn btn--go">Merge it in</button>
+              <button id="restoreCancel" class="btn btn--quiet">Cancel</button>
+            </div>
+            <p id="restoreMsg" class="hint" hidden></p>
+          </div>
+        </section>
+
+        <section class="block">
+          <h2>Starting over</h2>
+          <p class="hint">Erases every day, every flower and the behaviour log on this device.
+            There is no undo, so take a backup first.</p>
+          <div class="btn-row">
+            <button id="resetBtn" class="btn btn--danger">Erase everything</button>
+          </div>
+        </section>
+
+        <p class="credits">
+          Plants &amp; effects: <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noopener">Noto Animated Emoji</a> by Google (CC BY 4.0).
+          Foliage: <a href="https://kenney.nl/assets/foliage-sprites" target="_blank" rel="noopener">Kenney</a> (CC0).
+          Player: <a href="https://github.com/airbnb/lottie-web" target="_blank" rel="noopener">lottie-web</a> (MIT).
+        </p>
+      </div>
+
     </div>
   </div>
 </div>
