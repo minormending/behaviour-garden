@@ -1031,8 +1031,11 @@ function renderSync() {
 
 /* The contract the bridge module talks to. Kept explicit rather than letting a
    module reach into this file's globals, so what crosses the boundary is
-   obvious to whoever reads this next. */
-window.GardenSync = {
+   obvious to whoever reads this next.
+
+   The name is the same in every app that uses this sync module, which is what
+   lets them all share one identical bridge.js instead of three near-copies. */
+window.SyncHost = {
   game: SYNC_GAME,
   initialState: () => syncSubset(S),
   merge: syncMerge,
